@@ -613,12 +613,25 @@
             async borrar(id) {
                 if(!confirm('¿Eliminar este evento?')) return;
                 try {
-                    await client.from('eventos').delete().eq('id', id);
+                    // Eliminar de la BD
+                    const { error } = await client.from('eventos').delete().eq('id', id);
+                    if(error) throw error;
+
+                    // Remover del array local INMEDIATAMENTE
+                    eventos = eventos.filter(e => e.id !== id);
+
+                    // Cerrar modal y actualizar UI
                     this.cerrarModal();
-                    this.cargarEventos();
+                    this.renderizar();
+
+                    // Recargar desde BD (para sincronizar otros devices)
+                    setTimeout(() => this.cargarEventos(), 500);
+
                     alert('✅ Evento eliminado');
                 } catch(err) {
                     alert('❌ Error: ' + err.message);
+                    // Recargar para sincronizar en caso de error
+                    this.cargarEventos();
                 }
             },
 
