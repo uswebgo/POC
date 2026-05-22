@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#2563eb">
+    <meta name="description" content="Aplicación inteligente de planificación con sincronización en Google Sheets">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Agenda Javi">
+    <meta property="og:title" content="Agenda Inteligente Híbrida">
+    <meta property="og:description" content="Planificación inteligente con sincronización en Sheets y notificaciones automáticas">
+    <meta property="og:image" content="https://lh3.googleusercontent.com/d/1cAkrJpNh5KgpJ1tQnQktHniWrLMX6NO4">
+    <meta property="og:url" content="https://agenda.javi.app">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Agenda Inteligente Híbrida">
+    <meta name="twitter:image" content="https://lh3.googleusercontent.com/d/1cAkrJpNh5KgpJ1tQnQktHniWrLMX6NO4">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="https://lh3.googleusercontent.com/d/1eQJlngZSouUJxarOvjBuB0ZuwN66jrPR">
+    <link rel="apple-touch-icon" href="https://lh3.googleusercontent.com/d/1eQJlngZSouUJxarOvjBuB0ZuwN66jrPR">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+    <title>Agenda Inteligente Híbrida</title>
+    <style>
+        @supports(padding: max(0px)) {
+            body { padding-bottom: max(60px, env(safe-area-inset-bottom)); }
+        }
+        .navbar-bottom { position: fixed; bottom: 0; left: 0; right: 0; padding-bottom: env(safe-area-inset-bottom); z-index: 40; }
+        .container-safe { padding-bottom: 80px; }
+        .fade-in { animation: fadeIn 0.3s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .spinner { animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="bg-slate-50">
+    <!-- Header -->
+    <header class="sticky top-0 bg-white border-b border-slate-200 shadow-sm z-30">
+        <div class="max-w-2xl mx-auto px-4 py-4">
+            <div class="flex items-center justify-between gap-3">
+                <div class="flex items-center gap-2">
+                    <img src="https://lh3.googleusercontent.com/d/1eQJlngZSouUJxarOvjBuB0ZuwN66jrPR" alt="Logo" class="w-8 h-8 rounded">
+                    <h1 class="text-lg font-bold text-blue-600">Agenda Javi</h1>
+                </div>
+                <div id="sync-status" class="flex items-center gap-1 text-xs px-3 py-1 rounded-full bg-slate-100 hidden">
+                    <span id="sync-icon" class="inline-block">•</span>
+                    <span id="sync-text">Sincronizando...</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-2xl mx-auto px-4 py-6 container-safe">
+        <!-- Configuración -->
+        <section class="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
+            <h2 class="font-semibold text-amber-900 mb-3 flex items-center gap-2">
+                <i data-feather="settings" class="w-4 h-4"></i> Configuración
+            </h2>
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Tu Correo (notificaciones)</label>
+                    <input type="email" id="user_email" placeholder="tu.email@gmail.com" class="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">ID Función Apps Script</label>
+                    <input type="text" id="apps_script_id" placeholder="AKfycbzX..." class="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-xs">
+                    <p class="text-xs text-gray-600 mt-1">Obtén esto en Google Apps Script → Desplegar → Nuevo despliegue</p>
+                </div>
+                <button onclick="guardarConfig()" class="w-full bg-gray-700 hover:bg-gray-800 text-white font-semibold py-2 rounded-lg transition text-sm">
+                    💾 Guardar Configuración
+                </button>
+            </div>
+        </section>
+
+        <!-- Tabs -->
+        <div class="flex gap-2 mb-6 border-b border-slate-200">
+            <button onclick="switchTab('manual')" class="tab-btn active px-4 py-3 font-semibold text-blue-600 border-b-2 border-blue-600 transition">
+                ✍️ Manual
+            </button>
+            <button onclick="switchTab('ia')" class="tab-btn px-4 py-3 font-semibold text-gray-600 border-b-2 border-transparent hover:text-gray-800 transition">
+                🤖 Foto IA
+            </button>
+        </div>
+
+        <!-- Tab: Manual -->
+        <section id="tab-manual" class="tab-content fade-in">
+            <div class="bg-white rounded-lg shadow p-6 mb-6">
+                <h2 class="font-bold text-lg text-gray-900 mb-4">📅 Nueva Planificación</h2>
+                <form id="evento-form" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Título del evento</label>
+                        <input type="text" id="titulo" placeholder="Ej: Turno Mañana, Reunión" required class="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Categoría</label>
+                        <select id="tipo" class="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                            <option value="Laboral">💼 Laboral</option>
+                            <option value="Colegio">🏫 Colegio</option>
+                            <option value="Cumpleaños">🎂 Cumpleaños</option>
+                            <option value="Personal">🏠 Personal</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Fecha y Hora</label>
+                        <input type="datetime-local" id="fecha" required class="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Repetición</label>
+                        <select id="repeticion" class="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                            <option value="ninguna">No repetir</option>
+                            <option value="diaria">Todos los días (30 días)</option>
+                            <option value="semanal">Semanal (12 semanas)</option>
+                            <option value="anual">Anual (3 años)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Notas (opcional)</label>
+                        <textarea id="notas" rows="2" placeholder="Detalles adicionales..." class="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                    </div>
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition">
+                        ➕ Guardar en Agenda
+                    </button>
+                </form>
+            </div>
+        </section>
+
+        <!-- Tab: IA -->
+        <section id="tab-ia" class="tab-content hidden fade-in">
+            <div class="bg-green-50 border border-green-200 rounded-lg p-6 mb-6">
+                <h2 class="font-bold text-lg text-green-900 mb-4">🤖 Carga Inteligente</h2>
+                <p class="text-sm text-green-800 mb-4">Presiona el botón para copiar las instrucciones, pégalas en Gemini, sube tu foto y copia la respuesta JSON.</p>
+                <button onclick="copiarPromptIA()" class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-lg transition mb-4 flex items-center justify-center gap-2">
+                    <i data-feather="copy" class="w-5 h-5"></i> Copiar Instrucciones para IA
+                </button>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Respuesta JSON de Gemini</label>
+                    <textarea id="json_ia" rows="6" placeholder="Pega el JSON aquí..." class="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 font-mono text-xs"></textarea>
+                </div>
+                <button onclick="importarJSON()" class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-lg transition mt-4">
+                    ✅ Procesar e Importar
+                </button>
+            </div>
+        </section>
+
+        <!-- Eventos List -->
+        <section class="bg-white rounded-lg shadow p-6 mb-6">
+            <h2 class="font-bold text-lg text-gray-900 mb-4">📋 Próximas Alertas</h2>
+            <div id="lista-eventos" class="space-y-3">
+                <p class="text-center text-gray-500 py-8">Cargando eventos...</p>
+            </div>
+        </section>
+    </main>
+
+    <!-- Bottom Navigation Bar -->
+    <nav class="navbar-bottom bg-white border-t border-slate-200 shadow-2xl">
+        <div class="max-w-2xl mx-auto px-4 flex items-center justify-around py-3">
+            <button onclick="switchTab('manual')" class="nav-btn flex flex-col items-center gap-1 px-4 py-2 text-gray-600 hover:text-blue-600 transition" title="Manual">
+                <i data-feather="edit-3" class="w-6 h-6"></i>
+                <span class="text-xs font-semibold">Manual</span>
+            </button>
+            <button onclick="switchTab('ia')" class="nav-btn flex flex-col items-center gap-1 px-4 py-2 text-gray-600 hover:text-blue-600 transition" title="IA">
+                <i data-feather="image" class="w-6 h-6"></i>
+                <span class="text-xs font-semibold">Foto</span>
+            </button>
+            <button onclick="compartirAppRRSS()" class="nav-btn flex flex-col items-center gap-1 px-4 py-2 text-gray-600 hover:text-blue-600 transition" title="Compartir">
+                <i data-feather="share-2" class="w-6 h-6"></i>
+                <span class="text-xs font-semibold">Compartir</span>
+            </button>
+            <button onclick="instalarPWA()" class="nav-btn flex flex-col items-center gap-1 px-4 py-2 text-gray-600 hover:text-blue-600 transition" title="Instalar">
+                <i data-feather="download" class="w-6 h-6"></i>
+                <span class="text-xs font-semibold">Instalar</span>
+            </button>
+        </div>
+    </nav>
+
+    <script>
+        feather.replace();
+
+        let eventos = JSON.parse(localStorage.getItem('hibrido_eventos')) || [];
+        let appScriptId = localStorage.getItem('apps_script_id') || '';
+        let userEmail = localStorage.getItem('user_email') || '';
+        let deferredPrompt = null;
+
+        document.getElementById('user_email').value = userEmail;
+        document.getElementById('apps_script_id').value = appScriptId;
+
+        // PWA Installation
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+        });
+
+        function instalarPWA() {
+            if(deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then(({ outcome }) => {
+                    if(outcome === 'accepted') alert('✓ Aplicación instalada');
+                    deferredPrompt = null;
+                });
+            } else {
+                if(navigator.share) {
+                    navigator.share({
+                        title: 'Agenda Inteligente',
+                        text: 'Mi aplicación de planificación inteligente',
+                        url: window.location.href
+                    });
+                }
+            }
+        }
+
+        function compartirAppRRSS() {
+            const texto = encodeURIComponent('📅 Agenda Inteligente Híbrida - Mi app para planificar con sincronización en Google Sheets');
+            const url = encodeURIComponent(window.location.href);
+            const opciones = {
+                whatsapp: `https://wa.me/?text=${texto}%20${url}`,
+                instagram: `https://instagram.com/`,
+                telegram: `https://t.me/share/url?url=${url}&text=${texto}`,
+                linkedin: `https://linkedin.com/sharing/share-offsite/?url=${url}`,
+                twitter: `https://twitter.com/intent/tweet?text=${texto}&url=${url}`
+            };
+
+            if(navigator.share) {
+                navigator.share({
+                    title: 'Agenda Inteligente',
+                    text: 'Planificación inteligente con Sheets y notificaciones automáticas',
+                    url: window.location.href
+                });
+            } else {
+                alert('Comparte en:\nWhatsApp: ' + opciones.whatsapp);
+            }
+        }
+
+        if('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js').catch(err => console.log('SW error:', err));
+        }
+
+        function guardarConfig() {
+            const email = document.getElementById('user_email').value;
+            const scriptId = document.getElementById('apps_script_id').value;
+            if(!email || !scriptId) { alert('Completa todos los campos'); return; }
+            localStorage.setItem('user_email', email);
+            localStorage.setItem('apps_script_id', scriptId);
+            userEmail = email;
+            appScriptId = scriptId;
+            alert('✓ Configuración guardada');
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(b => {
+                b.classList.remove('border-blue-600', 'text-blue-600');
+                b.classList.add('border-transparent', 'text-gray-600');
+            });
+
+            if(tab === 'manual') {
+                document.getElementById('tab-manual').classList.remove('hidden');
+                document.querySelectorAll('.tab-btn')[0].classList.add('border-blue-600', 'text-blue-600');
+            } else {
+                document.getElementById('tab-ia').classList.remove('hidden');
+                document.querySelectorAll('.tab-btn')[1].classList.add('border-blue-600', 'text-blue-600');
+            }
+        }
+
+        function mostrarSyncStatus(estado, mensaje) {
+            const statusDiv = document.getElementById('sync-status');
+            const icon = document.getElementById('sync-icon');
+            const text = document.getElementById('sync-text');
+
+            if(estado === 'show') {
+                statusDiv.classList.remove('hidden');
+                icon.innerHTML = '<svg class="spinner w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"></circle></svg>';
+                text.textContent = mensaje;
+            } else if(estado === 'hide') {
+                setTimeout(() => statusDiv.classList.add('hidden'), 2000);
+            }
+        }
+
+        async function sincronizarConAppsScript(evento) {
+            if(!appScriptId || !userEmail) return;
+            mostrarSyncStatus('show', 'Sincronizando...');
+
+            try {
+                await fetch(`https://script.google.com/macros/d/${appScriptId}/usercontent`, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'guardarEvento',
+                        evento: evento,
+                        email: userEmail
+                    })
+                });
+                mostrarSyncStatus('hide');
+            } catch(err) {
+                console.error('Error sync:', err);
+            }
+        }
+
+        document.getElementById('evento-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const fechaBase = new Date(document.getElementById('fecha').value);
+            const rep = document.getElementById('repeticion').value;
+            const titulo = document.getElementById('titulo').value;
+            const tipo = document.getElementById('tipo').value;
+            const notas = document.getElementById('notas').value;
+            const grupoId = Date.now();
+
+            const addEvent = (f) => eventos.push({
+                id: Math.random().toString(36).substr(2, 9),
+                grupoId, titulo, tipo,
+                fecha: f.toISOString(),
+                notas, notificado: false
+            });
+
+            if(rep === 'ninguna') addEvent(fechaBase);
+            else if(rep === 'diaria') for(let i=0; i<30; i++) { let f = new Date(fechaBase); f.setDate(f.getDate()+i); addEvent(f); }
+            else if(rep === 'semanal') for(let i=0; i<12; i++) { let f = new Date(fechaBase); f.setDate(f.getDate()+(i*7)); addEvent(f); }
+            else if(rep === 'anual') for(let i=0; i<3; i++) { let f = new Date(fechaBase); f.setFullYear(f.getFullYear()+i); addEvent(f); }
+
+            localStorage.setItem('hibrido_eventos', JSON.stringify(eventos));
+            this.reset();
+            renderEventos();
+            sincronizarConAppsScript({ titulo, tipo, fecha: fechaBase.toISOString(), notas });
+        });
+
+        function copiarPromptIA() {
+            const fechaActual = new Date().toLocaleDateString();
+            const prompt = `Lee la imagen y extrae eventos en este JSON:
+[
+  {
+    "titulo": "Nombre evento",
+    "tipo": "Laboral|Colegio|Cumpleaños|Personal",
+    "fecha": "YYYY-MM-DDTHH:MM:SS",
+    "notas": "Detalles"
+  }
+]
+Fecha actual: ${fechaActual}. Solo JSON sin explicaciones.`;
+
+            navigator.clipboard.writeText(prompt).then(() => {
+                alert('✓ Instrucciones copiadas. Ve a Gemini y sube tu foto');
+            }).catch(() => alert('Error al copiar'));
+        }
+
+        function importarJSON() {
+            try {
+                const rawText = document.getElementById('json_ia').value.trim();
+                const cleanText = rawText.replace(/^```json/, '').replace(/^```/, '').replace(/```$/, '').trim();
+                const data = JSON.parse(cleanText);
+
+                if(!Array.isArray(data)) throw new Error("Debe ser un array []");
+
+                const grupoId = Date.now();
+                data.forEach(item => {
+                    if(item.titulo && item.tipo && item.fecha) {
+                        const d = new Date(item.fecha);
+                        if(!isNaN(d.getTime())) {
+                            eventos.push({
+                                id: Math.random().toString(36).substr(2, 9),
+                                grupoId, titulo: item.titulo, tipo: item.tipo,
+                                fecha: d.toISOString(),
+                                notas: item.notas || '', notificado: false
+                            });
+                        }
+                    }
+                });
+
+                localStorage.setItem('hibrido_eventos', JSON.stringify(eventos));
+                renderEventos();
+                document.getElementById('json_ia').value = '';
+                alert('✓ Eventos importados');
+                data.forEach(item => sincronizarConAppsScript(item));
+            } catch(err) {
+                alert('Error: ' + err.message);
+            }
+        }
+
+        function eliminarEvento(id) {
+            eventos = eventos.filter(ev => ev.id !== id);
+            localStorage.setItem('hibrido_eventos', JSON.stringify(eventos));
+            renderEventos();
+        }
+
+        function renderEventos() {
+            const contenedor = document.getElementById('lista-eventos');
+            const ahora = new Date();
+            eventos = eventos.filter(ev => new Date(ev.fecha) >= new Date(ahora.getTime() - 120*60000));
+            eventos.sort((a,b) => new Date(a.fecha) - new Date(b.fecha));
+
+            if(eventos.length === 0) {
+                contenedor.innerHTML = '<p class="text-center text-gray-400 py-8">Sin pendientes. ¡Día libre! 🎉</p>';
+                return;
+            }
+
+            contenedor.innerHTML = eventos.map(ev => {
+                const f = new Date(ev.fecha);
+                const badges = {
+                    'Laboral': 'bg-blue-100 text-blue-800',
+                    'Colegio': 'bg-purple-100 text-purple-800',
+                    'Cumpleaños': 'bg-pink-100 text-pink-800',
+                    'Personal': 'bg-green-100 text-green-800'
+                };
+                return `
+                    <div class="border-l-4 border-blue-500 bg-slate-50 p-4 rounded-r-lg flex justify-between items-start gap-3">
+                        <div class="flex-1">
+                            <span class="inline-block px-2 py-1 rounded text-xs font-semibold ${badges[ev.tipo] || 'bg-gray-100 text-gray-800'}">${ev.tipo}</span>
+                            <p class="font-semibold text-gray-900 mt-2">${ev.titulo}</p>
+                            <p class="text-xs text-gray-600 mt-1">📅 ${f.toLocaleDateString()} - ${f.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</p>
+                            ${ev.notas ? `<p class="text-xs text-gray-700 italic mt-2">${ev.notas}</p>` : ''}
+                        </div>
+                        <button onclick="eliminarEvento('${ev.id}')" class="text-red-600 hover:text-red-800 font-bold text-lg flex-shrink-0">✕</button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        renderEventos();
+    </script>
+</body>
+</html>

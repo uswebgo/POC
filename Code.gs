@@ -1,210 +1,433 @@
-// GOOGLE APPS SCRIPT - Copia esto en tu Apps Script de Google Sheets
-// Sheet ID: 1fBeXBCztAIzcsblBBE4K8EjXrcFKjoxsEG9ZQzWZetY
+/**
+ * AGENDA INTELIGENTE — Google Apps Script v3.0
+ * Integración con Supabase + Notificaciones HTML
+ */
 
-const SHEET_ID = '1fBeXBCztAIzcsblBBE4K8EjXrcFKjoxsEG9ZQzWZetY';
-const SHEET_NAME = 'Eventos';
-const NOTIFICACIONES_SHEET = 'Notificaciones';
-const MARGEN_NOTIFICACION = 15; // minutos antes de alertar
-const EMAIL_DESTINO = 'j.castillo.bozo@gmail.com'; // 
+// ===== CONSTANTES GLOBALES =====
+const CONFIG = {
+  // Supabase
+  SUPABASE_URL: 'https://ufwzavtzbmvieptszehd.supabase.co',
+  SUPABASE_SERVICE_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVmd3phdnR6Ym12aWVwdHN6ZWhkIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTQyNTQ5MCwiZXhwIjoyMDk1MDAxNDkwfQ.idsAKaZC1rzIyWrZe-dePsTA1u-D6HhfVfiT1o5PYYnY',
 
-let ss = SpreadsheetApp.openById(SHEET_ID);
+  // Email
+  EMAIL_DESTINO: 'j.castillo.bozo@gmail.com',
+  EMAIL_REMITENTE: 'j.castillo.bozo@gmail.com',
+  MARGEN_NOTIFICACION: 15, // minutos antes
 
-function onOpen() {
-    const ui = SpreadsheetApp.getUi();
-    ui.createMenu('📅 Agenda')
-        .addItem('🔄 Verificar Notificaciones Ahora', 'verificarNotificaciones')
-        .addItem('📊 Ver Estadísticas', 'mostrarEstadisticas')
-        .addSeparator()
-        .addItem('⚙️ Configurar Triggers Automáticos', 'crearTriggers')
-        .addToUi();
+  // Paleta de colores
+  COLORES: {
+    primary: '#2563eb',      // Azul
+    secondary: '#059669',    // Verde
+    warning: '#ca8a04',      // Amarillo
+    danger: '#dc2626',       // Rojo
+    text: '#0f172a',         // Oscuro
+    textLight: '#64748b',    // Gris
+    bg: '#f1f5f9',           // Fondo claro
+    bgLight: '#f8fafc',      // Fondo más claro
+  },
+
+  // Triggers
+  TRIGGER_INTERVAL_MINUTES: 10,
+
+  // Mensajería
+  SLACK_WEBHOOK: '', // Opcional: agregar si necesitas Slack
+};
+
+// ===== HEADERS SUPABASE =====
+function getSupabaseHeaders() {
+  return {
+    'Authorization': `Bearer ${CONFIG.SUPABASE_SERVICE_KEY}`,
+    'Content-Type': 'application/json',
+    'apikey': CONFIG.SUPABASE_SERVICE_KEY,
+  };
 }
 
-// ===== RECIBIR DATOS DEL HTML =====
+// ===== FUNCIONES WEBHOOK =====
+
 function doPost(e) {
-    try {
-        const data = JSON.parse(e.postData.contents);
+  try {
+    const data = JSON.parse(e.postData.contents);
 
-        if(data.action === 'guardarEvento') {
-            guardarEventoEnSheet(data.evento, data.email);
-            return ContentService.createTextOutput(JSON.stringify({
-                success: true,
-                message: 'Evento guardado en Sheets'
-            })).setMimeType(ContentService.MimeType.JSON);
-        }
-
-        return ContentService.createTextOutput(JSON.stringify({
-            success: false,
-            message: 'Acción no reconocida'
-        })).setMimeType(ContentService.MimeType.JSON);
-
-    } catch(err) {
-        Logger.log('Error doPost: ' + err);
-        return ContentService.createTextOutput(JSON.stringify({
-            success: false,
-            message: err.toString()
-        })).setMimeType(ContentService.MimeType.JSON);
+    if (data.action === 'guardarEvento') {
+      return guardarEventoEnSupabase(data.evento, data.email);
     }
+
+    return respuesta(false, 'Acción no reconocida');
+  } catch (err) {
+    Logger.log('❌ Error doPost: ' + err);
+    return respuesta(false, err.toString());
+  }
 }
 
-// ===== GUARDAR EVENTO EN SHEETS =====
-function guardarEventoEnSheet(evento, email) {
-    try {
-        let sheet = getOrCreateSheet(SHEET_NAME);
+function guardarEventoEnSupabase(evento, email) {
+  try {
+    const fecha = new Date(evento.fecha);
+    const payload = {
+      titulo: evento.titulo,
+      tipo: evento.tipo,
+      fecha: fecha.toISOString(),
+      notas: evento.notas || '',
+      email_usuario: email || CONFIG.EMAIL_DESTINO,
+    };
 
-        if(sheet.getLastRow() === 0) {
-            sheet.appendRow([
-                'Timestamp',
-                'Título',
-                'Categoría',
-                'Fecha',
-                'Hora',
-                'Notas',
-                'Email Destino',
-                'Notificado',
-                'ID Evento'
-            ]);
-        }
+    const options = {
+      method: 'post',
+      headers: getSupabaseHeaders(),
+      payload: JSON.stringify(payload),
+      muteHttpExceptions: true,
+    };
 
-        const fecha = new Date(evento.fecha);
-        const soloFecha = Utilities.formatDate(fecha, Session.getScriptTimeZone(), 'yyyy-MM-dd');
-        const soloHora = Utilities.formatDate(fecha, Session.getScriptTimeZone(), 'HH:mm:ss');
+    const url = `${CONFIG.SUPABASE_URL}/rest/v1/eventos`;
+    const response = UrlFetchApp.fetch(url, options);
+    const result = JSON.parse(response.getContentText());
 
-        sheet.appendRow([
-            new Date(),
-            evento.titulo,
-            evento.tipo,
-            soloFecha,
-            soloHora,
-            evento.notas || '',
-            email,
-            'NO',
-            Utilities.getUuid()
-        ]);
-
-        Logger.log('✓ Evento guardado: ' + evento.titulo);
-    } catch(err) {
-        Logger.log('Error guardarEventoEnSheet: ' + err);
+    if (response.getResponseCode() === 201) {
+      Logger.log(`✅ Evento guardado: ${evento.titulo}`);
+      return respuesta(true, 'Evento guardado en Supabase');
+    } else {
+      Logger.log(`⚠️ Error Supabase: ${response.getContentText()}`);
+      return respuesta(false, 'Error al guardar en Supabase');
     }
+  } catch (err) {
+    Logger.log('❌ Error guardarEventoEnSupabase: ' + err);
+    return respuesta(false, err.toString());
+  }
 }
 
-// ===== VERIFICAR Y ENVIAR NOTIFICACIONES =====
+// ===== NOTIFICACIONES =====
+
 function verificarNotificaciones() {
-    try {
-        let sheet = getOrCreateSheet(SHEET_NAME);
-        let data = sheet.getDataRange().getValues();
+  try {
+    const ahora = new Date();
+    const margenMs = CONFIG.MARGEN_NOTIFICACION * 60 * 1000;
 
-        if(data.length <= 1) {
-            Logger.log('No hay eventos para notificar');
-            return;
-        }
+    // Obtener próximas notificaciones desde Supabase
+    const options = {
+      method: 'get',
+      headers: getSupabaseHeaders(),
+      muteHttpExceptions: true,
+    };
 
-        const ahora = new Date();
-        const margenMs = MARGEN_NOTIFICACION * 60 * 1000;
+    const url = `${CONFIG.SUPABASE_URL}/rest/v1/proximas_notificaciones`;
+    const response = UrlFetchApp.fetch(url, options);
 
-        for(let i = 1; i < data.length; i++) {
-            const row = data[i];
-            const titulo = row[1];
-            const categoria = row[2];
-            const fechaStr = row[3];
-            const horaStr = row[4];
-            const notas = row[5];
-            const email = row[6];
-            const notificado = row[7];
-            const idEvento = row[8];
-
-            if(notificado === 'SI') continue; // Ya notificado
-
-            try {
-                const eventoFecha = new Date(fechaStr + 'T' + horaStr);
-
-                if(eventoFecha >= ahora && eventoFecha <= new Date(ahora.getTime() + margenMs)) {
-                    // Usa la constante EMAIL_DESTINO, o el email de la fila si es diferente
-                    const emailDestino = email || EMAIL_DESTINO;
-                    enviarEmailNotificacion(titulo, categoria, eventoFecha, notas, emailDestino);
-
-                    // Marcar como notificado
-                    sheet.getRange(i + 1, 8).setValue('SI');
-                    Logger.log('✓ Notificación enviada: ' + titulo + ' -> ' + email);
-                }
-            } catch(dateErr) {
-                Logger.log('Error procesando fecha en fila ' + i + ': ' + dateErr);
-            }
-        }
-    } catch(err) {
-        Logger.log('Error verificarNotificaciones: ' + err);
+    if (response.getResponseCode() !== 200) {
+      Logger.log('⚠️ Error obteniendo notificaciones: ' + response.getContentText());
+      return;
     }
+
+    const eventos = JSON.parse(response.getContentText());
+
+    eventos.forEach(evento => {
+      const fechaEvento = new Date(evento.fecha);
+
+      if (fechaEvento >= ahora && fechaEvento <= new Date(ahora.getTime() + margenMs)) {
+        enviarNotificacion(evento);
+        marcarComoNotificado(evento.id);
+      }
+    });
+
+    Logger.log(`✅ Verificación completada: ${eventos.length} eventos pendientes`);
+  } catch (err) {
+    Logger.log('❌ Error verificarNotificaciones: ' + err);
+  }
 }
 
-// ===== ENVIAR EMAIL CON GMAILAPP =====
-function enviarEmailNotificacion(titulo, categoria, fecha, notas, emailDestino) {
-    try {
-        const asunto = `🔔 RECORDATORIO: ${titulo}`;
-        const cuerpo = `
-📅 AVISO AUTOMÁTICO DE AGENDA
+function enviarNotificacion(evento) {
+  try {
+    const titulo = evento.titulo;
+    const categoria = evento.tipo;
+    const fecha = new Date(evento.fecha);
+    const notas = evento.notas;
+    const email = evento.email_usuario;
 
-Evento: ${titulo}
-Categoría: ${categoria}
-Fecha/Hora: ${fecha.toLocaleString('es-ES')}
-${notas ? 'Notas: ' + notas : ''}
+    const asunto = `🔔 RECORDATORIO: ${titulo}`;
+    const html = generarEmailHTML(titulo, categoria, fecha, notas);
 
----
-Este es un recordatorio automático de tu Agenda Híbrida Inteligente.
-`;
+    GmailApp.sendEmail(email, asunto, '', {
+      htmlBody: html,
+      noReply: true,
+    });
 
-        GmailApp.sendEmail(emailDestino, asunto, cuerpo);
-        Logger.log('📧 Email enviado a: ' + emailDestino);
-    } catch(err) {
-        Logger.log('Error enviarEmailNotificacion: ' + err);
+    Logger.log(`📧 Email enviado a: ${email}`);
+  } catch (err) {
+    Logger.log('❌ Error enviarNotificacion: ' + err);
+  }
+}
+
+function generarEmailHTML(titulo, categoria, fecha, notas) {
+  const colores = CONFIG.COLORES;
+
+  const iconos = {
+    'Laboral': '💼',
+    'Colegio': '🏫',
+    'Cumpleaños': '🎂',
+    'Personal': '🏠',
+  };
+
+  const colorCategoria = {
+    'Laboral': '#3b82f6',
+    'Colegio': '#a855f7',
+    'Cumpleaños': '#ec4899',
+    'Personal': '#10b981',
+  };
+
+  const fechaFormato = Utilities.formatDate(fecha, Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm');
+
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          background: ${colores.bg};
+          padding: 20px;
+        }
+        .container {
+          max-width: 600px;
+          margin: 0 auto;
+          background: white;
+          border-radius: 12px;
+          overflow: hidden;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .header {
+          background: linear-gradient(135deg, ${colores.primary}, ${colores.secondary});
+          color: white;
+          padding: 30px;
+          text-align: center;
+        }
+        .header h1 {
+          font-size: 24px;
+          margin-bottom: 10px;
+          font-weight: bold;
+        }
+        .header p {
+          font-size: 14px;
+          opacity: 0.95;
+        }
+        .content {
+          padding: 30px;
+        }
+        .evento-card {
+          border-left: 4px solid ${colorCategoria[categoria] || colores.primary};
+          background: ${colores.bgLight};
+          padding: 20px;
+          border-radius: 8px;
+          margin-bottom: 20px;
+        }
+        .categoria-badge {
+          display: inline-block;
+          background: ${colorCategoria[categoria] || colores.primary};
+          color: white;
+          padding: 6px 12px;
+          border-radius: 20px;
+          font-size: 12px;
+          font-weight: bold;
+          margin-bottom: 12px;
+        }
+        .titulo {
+          font-size: 20px;
+          font-weight: bold;
+          color: ${colores.text};
+          margin-bottom: 15px;
+        }
+        .detalle {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          margin-bottom: 10px;
+          color: ${colores.textLight};
+          font-size: 14px;
+        }
+        .detalle-icon {
+          font-size: 16px;
+        }
+        .notas {
+          background: white;
+          border-left: 2px solid ${colores.warning};
+          padding: 12px;
+          border-radius: 4px;
+          margin-top: 15px;
+          font-size: 13px;
+          color: ${colores.textLight};
+          font-style: italic;
+        }
+        .footer {
+          background: ${colores.bgLight};
+          padding: 20px;
+          text-align: center;
+          font-size: 12px;
+          color: ${colores.textLight};
+          border-top: 1px solid #e2e8f0;
+        }
+        .footer a {
+          color: ${colores.primary};
+          text-decoration: none;
+        }
+        .cta-button {
+          display: inline-block;
+          background: ${colores.primary};
+          color: white;
+          padding: 12px 24px;
+          border-radius: 6px;
+          text-decoration: none;
+          font-weight: bold;
+          margin-top: 20px;
+          text-align: center;
+        }
+        .cta-button:hover {
+          background: ${colores.secondary};
+        }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>🔔 Recordatorio de Evento</h1>
+          <p>Tu Agenda Inteligente Híbrida</p>
+        </div>
+
+        <div class="content">
+          <div class="evento-card">
+            <span class="categoria-badge">${iconos[categoria]} ${categoria}</span>
+
+            <div class="titulo">${titulo}</div>
+
+            <div class="detalle">
+              <span class="detalle-icon">📅</span>
+              <span>${fechaFormato}</span>
+            </div>
+
+            ${notas ? `
+              <div class="notas">
+                <strong>Notas:</strong><br/>
+                ${notas}
+              </div>
+            ` : ''}
+
+            <a href="https://agenda-inteligente.uswebgo.workers.dev" class="cta-button">
+              Ver en Agenda
+            </a>
+          </div>
+
+          <p style="color: ${colores.textLight}; font-size: 13px; line-height: 1.6;">
+            Este es un recordatorio automático de tu <strong>Agenda Inteligente Híbrida</strong>.
+            Si no esperabas este correo, puedes ignorarlo sin problema.
+          </p>
+        </div>
+
+        <div class="footer">
+          <p>© 2026 Agenda Inteligente • <a href="https://agenda-inteligente.uswebgo.workers.dev">Abrir App</a></p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+}
+
+function marcarComoNotificado(eventoId) {
+  try {
+    const options = {
+      method: 'patch',
+      headers: getSupabaseHeaders(),
+      payload: JSON.stringify({
+        notificado: true,
+        notificado_at: new Date().toISOString(),
+      }),
+      muteHttpExceptions: true,
+    };
+
+    const url = `${CONFIG.SUPABASE_URL}/rest/v1/eventos?id=eq.${eventoId}`;
+    const response = UrlFetchApp.fetch(url, options);
+
+    if (response.getResponseCode() === 200) {
+      Logger.log(`✅ Evento ${eventoId} marcado como notificado`);
     }
+  } catch (err) {
+    Logger.log('⚠️ Error marcarComoNotificado: ' + err);
+  }
 }
 
 // ===== UTILIDADES =====
-function getOrCreateSheet(name) {
-    let sheet = ss.getSheetByName(name);
-    if(!sheet) {
-        sheet = ss.insertSheet(name);
-    }
-    return sheet;
+
+function respuesta(success, message) {
+  return ContentService.createTextOutput(JSON.stringify({
+    success: success,
+    message: message,
+  })).setMimeType(ContentService.MimeType.JSON);
 }
 
 function crearTriggers() {
-    // Eliminar triggers antiguos
-    const triggers = ScriptApp.getProjectTriggers();
-    triggers.forEach(t => ScriptApp.deleteTrigger(t));
+  // Eliminar triggers antiguos
+  const triggers = ScriptApp.getProjectTriggers();
+  triggers.forEach(t => ScriptApp.deleteTrigger(t));
 
-    // Crear nuevo trigger cada 10 minutos
-    ScriptApp.newTrigger('verificarNotificaciones')
-        .timeBased()
-        .everyMinutes(10)
-        .create();
+  // Crear nuevo trigger cada 10 minutos
+  ScriptApp.newTrigger('verificarNotificaciones')
+    .timeBased()
+    .everyMinutes(CONFIG.TRIGGER_INTERVAL_MINUTES)
+    .create();
 
-    SpreadsheetApp.getUi().alert('✓ Triggers configurados. Verificaciones cada 10 minutos.');
+  Logger.log(`✅ Triggers configurados. Verificaciones cada ${CONFIG.TRIGGER_INTERVAL_MINUTES} minutos.`);
 }
 
-function mostrarEstadisticas() {
-    let sheet = getOrCreateSheet(SHEET_NAME);
-    let data = sheet.getDataRange().getValues();
-
-    const totalEventos = data.length - 1;
-    const notificados = data.slice(1).filter(row => row[7] === 'SI').length;
-    const pendientes = totalEventos - notificados;
-
-    const msg = `
-📊 ESTADÍSTICAS DE AGENDA
-
-Total de eventos: ${totalEventos}
-Notificaciones enviadas: ${notificados}
-Pendientes: ${pendientes}
-
-Próxima verificación automática: cada 10 minutos
-`;
-
-    SpreadsheetApp.getUi().alert(msg);
-}
-
-// Función auxiliar para depuración
 function probarEnvio() {
-    const correoTest = EMAIL_DESTINO || Session.getActiveUser().getEmail();
-    enviarEmailNotificacion('Test Evento', 'Prueba', new Date(), 'Este es un email de prueba', correoTest);
-    Logger.log('✓ Email de prueba enviado a: ' + correoTest);
+  const eventoTest = {
+    titulo: 'Evento de Prueba',
+    tipo: 'Personal',
+    fecha: new Date(),
+    notas: 'Este es un email de prueba con HTML formateado',
+  };
+
+  enviarNotificacion({
+    titulo: eventoTest.titulo,
+    tipo: eventoTest.tipo,
+    fecha: eventoTest.fecha,
+    notas: eventoTest.notas,
+    email_usuario: CONFIG.EMAIL_DESTINO,
+    id: 'test-123',
+  });
+
+  Logger.log(`📧 Email de prueba enviado a: ${CONFIG.EMAIL_DESTINO}`);
+}
+
+// ===== ESTADÍSTICAS =====
+
+function obtenerEstadisticas() {
+  try {
+    const options = {
+      method: 'get',
+      headers: getSupabaseHeaders(),
+      muteHttpExceptions: true,
+    };
+
+    const url = `${CONFIG.SUPABASE_URL}/rest/v1/eventos?select=count`;
+    const response = UrlFetchApp.fetch(url, options);
+
+    Logger.log('📊 Estadísticas obtenidas correctamente');
+  } catch (err) {
+    Logger.log('❌ Error obtenerEstadisticas: ' + err);
+  }
+}
+
+// ===== INICIALIZACIÓN =====
+
+function onInstall() {
+  onOpen();
+  crearTriggers();
+}
+
+function onOpen() {
+  SpreadsheetApp.getUi()
+    .createMenu('📅 Agenda')
+    .addItem('🔄 Verificar Notificaciones', 'verificarNotificaciones')
+    .addItem('📊 Estadísticas', 'obtenerEstadisticas')
+    .addItem('📧 Probar Email', 'probarEnvio')
+    .addSeparator()
+    .addItem('⚙️ Crear Triggers', 'crearTriggers')
+    .addToUi();
 }
