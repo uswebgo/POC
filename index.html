@@ -163,6 +163,7 @@
         const SUPABASE_URL = 'https://ufwzavtzbmvieptszehd.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVmd3phdnR6Ym12aWVwdHN6ZWhkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0MjU0OTAsImV4cCI6MjA5NTAwMTQ5MH0.5dR8XRFX-y50jjWBmuVB9yT1LNV0nuZCDSlJlyDEdWw';
         const EMAIL = 'j.castillo.bozo@gmail.com';
+        const APPS_SCRIPT_WEBHOOK = 'https://script.google.com/macros/s/AKfycby02zYFrUlGRYRSAH7kFpUxFlrwfGDMw6S7XOgbVSI-HnIh35U1VT8zFQcYaF2BA7QgTQ/exec';
 
         const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -320,6 +321,14 @@
                         titulo, categoria: cat, fecha: new Date(fecha).toISOString(),
                         notas: notas || null, email_usuario: EMAIL
                     }]);
+
+                    // Notificar a Apps Script
+                    fetch(APPS_SCRIPT_WEBHOOK, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'nuevoEvento', evento: { titulo, cat, fecha } })
+                    }).catch(() => {});
+
                     document.getElementById('form-evento').reset();
                     this.cargarEventos();
                     alert('✅ Guardado');
@@ -387,6 +396,14 @@
                             }
                         }
                     }
+
+                    // Notificar a Apps Script
+                    fetch(APPS_SCRIPT_WEBHOOK, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'verificarNotificaciones' })
+                    }).catch(() => {});
+
                     document.getElementById('json_ia').value = '';
                     this.cargarEventos();
                     alert('✅ Importados');
