@@ -2,6 +2,12 @@
 node_modules/
 package-lock.json
 yarn.lock
+pnpm-lock.yaml
+
+# Wrangler
+.wrangler/
+dist/
+build/
 
 # Environment variables
 .env

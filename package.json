@@ -9,5 +9,13 @@
     "type": "git",
     "url": "https://github.com/uswebgo/agenda-inteligente.git"
   },
-  "keywords": ["agenda", "pwa", "google-sheets", "calendario"]
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev"
+  },
+  "devDependencies": {
+    "@cloudflare/kv-asset-handler": "^0.3.0",
+    "wrangler": "^4.93.1"
+  },
+  "keywords": ["agenda", "pwa", "google-sheets", "calendario", "cloudflare-workers"]
 }
