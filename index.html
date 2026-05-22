@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="theme-color" content="#2563eb">
     <meta name="description" content="Aplicación inteligente de planificación con Supabase">
-    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Agenda Javi">
     <meta property="og:title" content="Agenda Inteligente Híbrida">
@@ -212,8 +212,7 @@
             APPS_SCRIPT_WEBHOOK: 'https://script.google.com/macros/s/AKfycbx4ydDuJRh6VFApW7KJ3CP7_5T0H5Xg3x9kizY_MwtWmwBY7MLR5b2lVLNvpm4nUnsXVQ/exec',
         };
 
-        const { createClient } = window.supabase;
-        const supabase = createClient(SUPABASE_CONFIG.URL, SUPABASE_CONFIG.ANON_KEY);
+        const supabase = window.supabase.createClient(SUPABASE_CONFIG.URL, SUPABASE_CONFIG.ANON_KEY);
 
         let eventos = [];
         let categorias = [];
