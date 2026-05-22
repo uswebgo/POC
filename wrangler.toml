@@ -5,7 +5,7 @@ compatibility_flags = ["nodejs_compat"]
 
 # ===== VARIABLES DE ENTORNO =====
 [env.production]
-vars = { APPS_SCRIPT_WEBHOOK = "https://script.google.com/macros/s/AKfycbx4ydDuJRh6VFApW7KJ3CP7_5T0H5Xg3x9kizY_MwtWmwBY7MLR5b2lVLNvpm4nUnsXVQ/exec" }
+vars = { APPS_SCRIPT_WEBHOOK = "https://script.google.com/macros/s/AKfycbzC-Nc-B2zFTjcAl63ZMgX0i2EskdwxNBIW8B0Nc_MyJvYd_dqhcDe88rGvk__yOceIxg/exec" }
 
 [assets]
 directory = "."
