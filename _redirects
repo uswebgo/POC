@@ -1,1 +1,20 @@
+# SPA routing — redirige rutas no encontradas a index.html
+# Excepto archivos estáticos y APIs
+
+/api/* :notfound
+/*.html /index.html 200
+/*.json /index.json 200
+/*.js /index.js 200
+/*.css /index.css 200
+/*.webp :notfound
+/*.png :notfound
+/*.jpg :notfound
+/*.jpeg :notfound
+/*.gif :notfound
+/*.svg :notfound
+/*.ico :notfound
+/*.txt :notfound
+/*.md :notfound
+
+# Rutas SPA (sin extensión)
 /* /index.html 200
