@@ -1,7 +1,0 @@
-name = "agenda-inteligente"
-type = "javascript"
-main = "index.html"
-
-[build]
-command = ""
-cwd = "./"
