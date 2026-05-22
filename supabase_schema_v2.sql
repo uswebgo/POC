@@ -35,6 +35,7 @@ CREATE TABLE IF NOT EXISTS eventos (
   titulo TEXT NOT NULL,
   categoria TEXT NOT NULL, -- Reemplaza 'tipo'
   fecha TIMESTAMP WITH TIME ZONE NOT NULL,
+  duracion_minutos INTEGER, -- Duración del evento en minutos (ej: 480 = 8 horas)
   notas TEXT,
 
   -- Información del usuario (RLS)

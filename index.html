@@ -12,21 +12,164 @@
     <link rel="icon" href="https://lh3.googleusercontent.com/d/1eQJlngZSouUJxarOvjBuB0ZuwN66jrPR">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <title>Agenda Inteligente v2.2</title>
+    <title>Agenda Inteligente v2.3</title>
     <style>
         @supports(padding: max(0px)) {
             body { padding-bottom: max(100px, env(safe-area-inset-bottom)); }
         }
-        .navbar-bottom { position: fixed; bottom: 0; left: 0; right: 0; padding-bottom: env(safe-area-inset-bottom); z-index: 40; }
+
+        .navbar-bottom {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding-bottom: env(safe-area-inset-bottom);
+            z-index: 40;
+            background: linear-gradient(to top, #ffffff, #fafafa);
+            backdrop-filter: blur(10px);
+        }
+
         .container-safe { padding-bottom: 120px; }
+
         .fade-in { animation: fadeIn 0.3s ease-in; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
         .spinner { animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
-        .event-card { border-left: 4px solid; padding: 14px; border-radius: 12px; margin-bottom: 12px; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 50; display: none; }
-        .modal-overlay.active { display: flex; align-items: flex-end; }
-        .modal-content { position: relative; max-height: 90vh; overflow-y-auto; width: 100%; background: white; border-radius: 24px 24px 0 0; }
+
+        /* Event Cards - Mejorado */
+        .event-card {
+            border-left: 4px solid;
+            padding: 16px;
+            border-radius: 14px;
+            margin-bottom: 12px;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .event-card:hover {
+            box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+            transform: translateY(-2px);
+        }
+
+        .event-card.collapsed {
+            padding: 12px 16px;
+        }
+
+        .event-card.collapsed .event-details {
+            display: none;
+        }
+
+        .event-card.expanded .event-details {
+            display: block;
+            animation: slideDown 0.2s ease-out;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; max-height: 0; }
+            to { opacity: 1; max-height: 500px; }
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 50;
+            display: none;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-overlay.active {
+            display: flex;
+            align-items: flex-end;
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        .modal-content {
+            position: relative;
+            max-height: 90vh;
+            overflow-y-auto;
+            width: 100%;
+            background: white;
+            border-radius: 24px 24px 0 0;
+            box-shadow: 0 -4px 16px rgba(0,0,0,0.15);
+        }
+
+        /* Bottom Navigation - Mejorado */
+        .nav-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 12px;
+            border-radius: 12px;
+            transition: all 0.2s ease;
+            font-size: 14px;
+            font-weight: 500;
+            color: #6b7280;
+        }
+
+        .nav-btn:hover {
+            background: #f3f4f6;
+            color: #2563eb;
+            transform: scale(1.05);
+        }
+
+        .nav-btn:active {
+            background: #e5e7eb;
+        }
+
+        .nav-btn span:first-child {
+            font-size: 20px;
+            line-height: 1;
+        }
+
+        .nav-btn span:last-child {
+            font-size: 11px;
+            white-space: nowrap;
+        }
+
+        /* Prompts y inputs mejorados */
+        input[type="text"],
+        input[type="datetime-local"],
+        input[type="time"],
+        select,
+        textarea {
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        input[type="text"]:focus,
+        input[type="datetime-local"]:focus,
+        input[type="time"]:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        /* Badge animado */
+        .badge-ai {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            background: #fbbf24;
+            color: #78350f;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
     </style>
 </head>
 <body class="bg-gray-50">
@@ -35,7 +178,7 @@
         <div class="max-w-2xl mx-auto px-4 py-3">
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
-                    <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold">A</div>
+                    <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-lg">A</div>
                     <div>
                         <h1 class="text-lg font-bold text-gray-900">Agenda Inteligente</h1>
                         <p class="text-xs text-gray-500">Planificación Inteligente</p>
@@ -50,14 +193,14 @@
         <div class="max-w-2xl mx-auto px-4 py-3 space-y-3">
             <!-- Período -->
             <div class="flex gap-2 overflow-x-auto pb-2">
-                <button class="period-btn px-4 py-2 rounded-full text-sm font-medium bg-blue-100 text-blue-700" data-period="hoy">📅 Hoy</button>
-                <button class="period-btn px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-700" data-period="semana">📆 Semana</button>
-                <button class="period-btn px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-700" data-period="todo">📋 Todo</button>
+                <button class="period-btn px-4 py-2 rounded-full text-sm font-medium bg-blue-100 text-blue-700 transition-all" data-period="hoy">📅 Hoy</button>
+                <button class="period-btn px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-700 transition-all hover:bg-gray-200" data-period="semana">📆 Semana</button>
+                <button class="period-btn px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-700 transition-all hover:bg-gray-200" data-period="todo">📋 Todo</button>
             </div>
 
             <!-- Categorías -->
             <div class="flex gap-2 overflow-x-auto pb-2">
-                <button class="category-btn px-3 py-1 rounded-full text-xs font-medium bg-gray-900 text-white" data-category="todo">Todas</button>
+                <button class="category-btn px-3 py-1 rounded-full text-xs font-medium bg-gray-900 text-white transition-all" data-category="todo">Todas</button>
                 <div id="category-filters"></div>
             </div>
         </div>
@@ -66,35 +209,71 @@
     <!-- Contenido Principal -->
     <main class="max-w-2xl mx-auto px-4 container-safe">
         <!-- Crear Evento -->
-        <div class="mt-4 mb-6 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg p-4 text-white">
-            <h2 class="font-bold mb-3">➕ Nuevo Evento</h2>
+        <div class="mt-4 mb-6 bg-gradient-to-br from-blue-500 via-blue-600 to-purple-600 rounded-2xl p-5 text-white shadow-lg">
+            <h2 class="font-bold mb-4 flex items-center gap-2">
+                <span>➕</span>
+                <span>Nuevo Evento</span>
+            </h2>
             <form id="form-evento" class="space-y-3">
-                <input type="text" id="titulo" placeholder="¿Qué planeás?" class="w-full px-4 py-2 bg-white bg-opacity-90 text-gray-900 rounded-lg text-sm" required>
+                <input type="text" id="titulo" placeholder="¿Qué planeás?" class="w-full px-4 py-3 bg-white bg-opacity-95 text-gray-900 rounded-lg text-sm font-medium" required>
+
                 <div class="grid grid-cols-2 gap-3">
-                    <select id="categoria" class="px-4 py-2 bg-white bg-opacity-90 text-gray-900 rounded-lg text-sm" required>
+                    <select id="categoria" class="px-4 py-3 bg-white bg-opacity-95 text-gray-900 rounded-lg text-sm font-medium" required>
                         <option value="">Categoría</option>
                     </select>
-                    <input type="datetime-local" id="fecha" class="px-4 py-2 bg-white bg-opacity-90 text-gray-900 rounded-lg text-sm" required>
+                    <input type="datetime-local" id="fecha" class="px-4 py-3 bg-white bg-opacity-95 text-gray-900 rounded-lg text-sm font-medium" required>
                 </div>
-                <textarea id="notas" placeholder="Detalles (opcional)" class="w-full px-4 py-2 bg-white bg-opacity-90 text-gray-900 rounded-lg text-sm" rows="2"></textarea>
-                <button type="submit" class="w-full bg-white text-blue-600 font-bold py-2 rounded-lg">Guardar</button>
+
+                <!-- Duración (NUEVA) -->
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-xs font-semibold text-blue-100 mb-1 block">Hora fin (opcional)</label>
+                        <input type="time" id="hora-fin" class="w-full px-4 py-3 bg-white bg-opacity-95 text-gray-900 rounded-lg text-sm font-medium">
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold text-blue-100 mb-1 block">Duración (minutos)</label>
+                        <input type="number" id="duracion" placeholder="ej: 480" class="w-full px-4 py-3 bg-white bg-opacity-95 text-gray-900 rounded-lg text-sm font-medium" min="0" step="15">
+                    </div>
+                </div>
+
+                <textarea id="notas" placeholder="Detalles (opcional)" class="w-full px-4 py-3 bg-white bg-opacity-95 text-gray-900 rounded-lg text-sm font-medium resize-none" rows="2"></textarea>
+                <button type="submit" class="w-full bg-white text-blue-600 font-bold py-3 rounded-lg hover:bg-gray-50 transition-all shadow-md">Guardar Evento</button>
             </form>
         </div>
 
-        <!-- Extraer de Imagen -->
-        <div class="mb-6 bg-amber-50 border-l-4 border-amber-500 p-4 rounded">
-            <h3 class="font-bold text-amber-900 mb-2">🤖 Extraer Eventos</h3>
-            <p class="text-sm text-amber-800 mb-2">Pega eventos en JSON</p>
+        <!-- Extraer de Imagen con Prompt escondido -->
+        <div class="mb-6 bg-amber-50 border-l-4 border-amber-500 p-4 rounded-lg">
+            <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                    <h3 class="font-bold text-amber-900">🤖 Extraer Eventos con IA</h3>
+                    <span class="badge-ai">Beta</span>
+                </div>
+                <button onclick="app.mostrarPrompt()" class="px-3 py-1 bg-amber-600 text-white text-xs font-bold rounded-lg hover:bg-amber-700 transition-all">Ver Prompt</button>
+            </div>
+            <p class="text-sm text-amber-800 mb-3">Pega eventos en JSON o copia el prompt para ChatGPT/Claude</p>
 
-            <!-- Prompt para copiar -->
-            <div class="mb-3 bg-white p-3 rounded border border-amber-200">
-                <p class="text-xs font-bold text-amber-900 mb-2">📋 Prompt IA (copiar):</p>
-                <textarea id="prompt-ia" readonly class="w-full px-2 py-2 bg-gray-50 border border-amber-200 rounded text-xs font-mono text-gray-700 resize-none" rows="5">Genera JSON eventos: [{"titulo":"...","categoria":"Laboral|Colegio|Cumpleaños|Personal|Karate|Medicinas|Horas Medicas|Ejercicio","fecha":"YYYY-MM-DDTHH:MM:SS","notas":"..."}]. Fecha en ISO 8601. Solo JSON.</textarea>
-                <button onclick="app.copiarPrompt()" class="mt-2 w-full bg-amber-600 text-white text-sm font-bold py-1 rounded">📋 Copiar</button>
+            <!-- Prompt Modal (ESCONDIDO) -->
+            <div id="modal-prompt" class="modal-overlay">
+                <div class="modal-content">
+                    <div class="sticky top-0 bg-white border-b border-gray-200 p-4 flex justify-between items-center">
+                        <h2 class="text-lg font-bold">📋 Prompt IA</h2>
+                        <button onclick="app.cerrarModal()" class="text-gray-500 hover:text-gray-700 text-xl">✕</button>
+                    </div>
+                    <div class="p-4">
+                        <p class="text-sm text-gray-600 mb-3">Copia este prompt y pégalo en ChatGPT o Claude:</p>
+                        <textarea id="prompt-ia" readonly class="w-full px-4 py-3 bg-gray-50 border-2 border-amber-200 rounded-lg text-xs font-mono text-gray-700 resize-none mb-3" rows="6">Genera JSON con eventos en este formato exacto: [{"titulo":"...","categoria":"Laboral|Colegio|Cumpleaños|Personal|Karate|Medicinas|Horas Medicas|Ejercicio","fecha":"YYYY-MM-DDTHH:MM:SS","duracion_minutos":480,"notas":"..."}].
+- Fecha en ISO 8601 local (sin Z)
+- duracion_minutos: duración en minutos (ej: 480 para 8 horas)
+- Solo válido JSON, sin markdown</textarea>
+                        <button onclick="app.copiarPrompt()" class="w-full bg-amber-600 text-white font-bold py-2 rounded-lg hover:bg-amber-700 transition-all mb-3">📋 Copiar Prompt</button>
+                        <p class="text-xs text-gray-500">Luego pega la respuesta JSON abajo y haz click en Importar</p>
+                    </div>
+                </div>
             </div>
 
-            <textarea id="json_ia" placeholder='[{"titulo":"...","categoria":"...","fecha":"YYYY-MM-DDTHH:MM:SS","notas":"..."}]' class="w-full px-4 py-3 border border-amber-200 rounded-lg text-sm font-mono" rows="4"></textarea>
-            <button onclick="app.importarJSON()" class="mt-3 w-full bg-amber-500 text-white font-bold py-2 rounded-lg">Importar</button>
+            <!-- Input JSON -->
+            <textarea id="json_ia" placeholder='[{"titulo":"...","categoria":"...","fecha":"YYYY-MM-DDTHH:MM:SS","duracion_minutos":480}]' class="w-full px-4 py-3 border-2 border-amber-200 rounded-lg text-sm font-mono resize-none mb-3" rows="4"></textarea>
+            <button onclick="app.importarJSON()" class="w-full bg-amber-500 text-white font-bold py-2 rounded-lg hover:bg-amber-600 transition-all">📥 Importar JSON</button>
         </div>
 
         <!-- Lista de Eventos -->
@@ -105,20 +284,24 @@
         </div>
     </main>
 
-    <!-- Bottom Navigation -->
+    <!-- Bottom Navigation - Mejorado -->
     <nav class="navbar-bottom bg-white border-t border-gray-200">
-        <div class="max-w-2xl mx-auto px-4 py-3 flex justify-around">
-            <button onclick="app.instalarPWA()" class="flex flex-col items-center gap-1 text-gray-600 hover:text-blue-600">
-                <span>📥</span><span class="text-xs">Instalar</span>
+        <div class="max-w-2xl mx-auto px-3 py-3 flex justify-around items-center">
+            <button onclick="app.instalarPWA()" class="nav-btn" title="Instalar como app">
+                <span>📥</span>
+                <span>Instalar</span>
             </button>
-            <button onclick="app.refrescar()" class="flex flex-col items-center gap-1 text-gray-600 hover:text-blue-600">
-                <span>🔄</span><span class="text-xs">Refrescar</span>
+            <button onclick="app.refrescar()" class="nav-btn" title="Refrescar eventos">
+                <span>🔄</span>
+                <span>Refrescar</span>
             </button>
-            <button onclick="app.abrirCategorias()" class="flex flex-col items-center gap-1 text-gray-600 hover:text-blue-600">
-                <span>🏷️</span><span class="text-xs">Categorías</span>
+            <button onclick="app.abrirCategorias()" class="nav-btn" title="Gestionar categorías">
+                <span>🏷️</span>
+                <span>Categorías</span>
             </button>
-            <button onclick="app.info()" class="flex flex-col items-center gap-1 text-gray-600 hover:text-blue-600">
-                <span>ℹ️</span><span class="text-xs">Info</span>
+            <button onclick="app.abrirGoogleCalendar()" class="nav-btn" title="Abrir Google Calendar">
+                <span>📆</span>
+                <span>Google Cal</span>
             </button>
         </div>
     </nav>
@@ -126,19 +309,31 @@
     <!-- Modal Editar -->
     <div id="modal-editar" class="modal-overlay">
         <div class="modal-content">
-            <div class="sticky top-0 bg-white border-b border-gray-200 p-4 flex justify-between">
-                <h2 class="text-lg font-bold">Editar</h2>
-                <button onclick="app.cerrarModal()" class="text-gray-500">✕</button>
+            <div class="sticky top-0 bg-white border-b border-gray-200 p-4 flex justify-between items-center">
+                <h2 class="text-lg font-bold">✏️ Editar Evento</h2>
+                <button onclick="app.cerrarModal()" class="text-gray-500 hover:text-gray-700 text-xl">✕</button>
             </div>
             <form id="form-editar" class="p-4 space-y-4">
                 <input type="hidden" id="edit-id">
-                <input type="text" id="edit-titulo" placeholder="Título" class="w-full px-4 py-2 border border-gray-300 rounded-lg" required>
-                <select id="edit-categoria" class="w-full px-4 py-2 border border-gray-300 rounded-lg" required></select>
-                <input type="datetime-local" id="edit-fecha" class="w-full px-4 py-2 border border-gray-300 rounded-lg" required>
-                <textarea id="edit-notas" placeholder="Notas" class="w-full px-4 py-2 border border-gray-300 rounded-lg" rows="3"></textarea>
+                <input type="text" id="edit-titulo" placeholder="Título" class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500" required>
+                <select id="edit-categoria" class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500" required></select>
+                <input type="datetime-local" id="edit-fecha" class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500" required>
+
                 <div class="grid grid-cols-2 gap-3">
-                    <button type="submit" class="bg-blue-500 text-white font-bold py-2 rounded-lg">Guardar</button>
-                    <button type="button" onclick="app.borrar(document.getElementById('edit-id').value)" class="bg-red-500 text-white font-bold py-2 rounded-lg">Eliminar</button>
+                    <div>
+                        <label class="text-xs font-semibold text-gray-600 mb-1 block">Hora fin (opcional)</label>
+                        <input type="time" id="edit-hora-fin" class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold text-gray-600 mb-1 block">Duración (min)</label>
+                        <input type="number" id="edit-duracion" placeholder="480" class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500" min="0" step="15">
+                    </div>
+                </div>
+
+                <textarea id="edit-notas" placeholder="Notas" class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500" rows="3"></textarea>
+                <div class="grid grid-cols-2 gap-3">
+                    <button type="submit" class="bg-blue-500 text-white font-bold py-2 rounded-lg hover:bg-blue-600 transition-all">Guardar</button>
+                    <button type="button" onclick="app.borrar(document.getElementById('edit-id').value)" class="bg-red-500 text-white font-bold py-2 rounded-lg hover:bg-red-600 transition-all">Eliminar</button>
                 </div>
             </form>
         </div>
@@ -147,31 +342,38 @@
     <!-- Modal Categorías -->
     <div id="modal-categorias" class="modal-overlay">
         <div class="modal-content">
-            <div class="sticky top-0 bg-white border-b border-gray-200 p-4 flex justify-between">
-                <h2 class="text-lg font-bold">Categorías</h2>
-                <button onclick="app.cerrarModal()" class="text-gray-500">✕</button>
+            <div class="sticky top-0 bg-white border-b border-gray-200 p-4 flex justify-between items-center">
+                <h2 class="text-lg font-bold">🏷️ Categorías</h2>
+                <button onclick="app.cerrarModal()" class="text-gray-500 hover:text-gray-700 text-xl">✕</button>
             </div>
             <div class="p-4">
                 <div id="lista-categorias" class="space-y-3 mb-4"></div>
                 <form id="form-categoria" class="space-y-3 border-t pt-4">
-                    <h3 class="font-bold">Nueva Categoría</h3>
-                    <input type="text" id="cat-nombre" placeholder="Nombre" class="w-full px-4 py-2 border border-gray-300 rounded-lg" required>
+                    <h3 class="font-bold text-gray-900">➕ Nueva Categoría</h3>
+                    <input type="text" id="cat-nombre" placeholder="Nombre" class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500" required>
                     <div class="grid grid-cols-2 gap-3">
-                        <input type="color" id="cat-color" value="#3b82f6" class="w-full h-10 border border-gray-300 rounded-lg">
-                        <input type="text" id="cat-icono" placeholder="Emoji" class="px-4 py-2 border border-gray-300 rounded-lg" maxlength="2" value="📌">
+                        <div>
+                            <label class="text-xs font-semibold text-gray-600 mb-1 block">Color</label>
+                            <input type="color" id="cat-color" value="#3b82f6" class="w-full h-10 border-2 border-gray-300 rounded-lg cursor-pointer">
+                        </div>
+                        <div>
+                            <label class="text-xs font-semibold text-gray-600 mb-1 block">Emoji</label>
+                            <input type="text" id="cat-icono" placeholder="📌" class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500" maxlength="2" value="📌">
+                        </div>
                     </div>
-                    <button type="submit" class="w-full bg-green-500 text-white font-bold py-2 rounded-lg">Agregar</button>
+                    <button type="submit" class="w-full bg-green-500 text-white font-bold py-2 rounded-lg hover:bg-green-600 transition-all">Agregar</button>
                 </form>
             </div>
         </div>
     </div>
 
     <script>
-        // Configuración
+        // ===== CONFIGURACIÓN =====
         const SUPABASE_URL = 'https://ufwzavtzbmvieptszehd.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVmd3phdnR6Ym12aWVwdHN6ZWhkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0MjU0OTAsImV4cCI6MjA5NTAwMTQ5MH0.5dR8XRFX-y50jjWBmuVB9yT1LNV0nuZCDSlJlyDEdWw';
         const EMAIL = 'j.castillo.bozo@gmail.com';
         const APPS_SCRIPT_WEBHOOK = 'https://script.google.com/macros/s/AKfycbzC-Nc-B2zFTjcAl63ZMgX0i2EskdwxNBIW8B0Nc_MyJvYd_dqhcDe88rGvk__yOceIxg/exec';
+        const GOOGLE_CALENDAR_URL = 'https://calendar.google.com/calendar/u/0/r';
 
         const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -181,8 +383,9 @@
         let periodo = 'hoy';
         let categoria = 'todo';
         let deferredPrompt = null;
+        let expandedEventId = null;
 
-        // App Object
+        // ===== APP OBJECT =====
         window.app = {
             async init() {
                 this.cargarCategorias();
@@ -235,7 +438,7 @@
 
             actualizarFiltros() {
                 const html = categorias.map(c => `
-                    <button class="category-btn px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700"
+                    <button class="category-btn px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700 transition-all hover:bg-gray-200"
                         data-category="${c.nombre}" style="border: 2px solid ${c.color};">
                         ${c.icono} ${c.nombre}
                     </button>
@@ -287,7 +490,7 @@
 
                 const container = document.getElementById('lista-eventos');
                 if(filtrados.length === 0) {
-                    container.innerHTML = '<div class="text-center py-8 text-gray-500">No hay eventos</div>';
+                    container.innerHTML = '<div class="text-center py-8 text-gray-400"><p>📭 No hay eventos</p></div>';
                     return;
                 }
 
@@ -296,23 +499,44 @@
                     const fecha = new Date(e.fecha);
                     const hora = fecha.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
                     const dia = fecha.toLocaleDateString('es-ES', { weekday: 'short', month: 'short', day: 'numeric' });
+
+                    // Calcular hora fin si existe duración
+                    let horaFin = '';
+                    if(e.duracion_minutos) {
+                        const fin = new Date(fecha.getTime() + e.duracion_minutos * 60000);
+                        horaFin = fin.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+                    }
+
+                    const isExpanded = expandedEventId === e.id;
+
                     return `
-                        <div class="event-card" style="border-left-color: ${cat.color || '#3b82f6'}" onclick="app.editar('${e.id}')">
+                        <div class="event-card ${isExpanded ? 'expanded' : 'collapsed'}" style="border-left-color: ${cat.color || '#3b82f6'}" onclick="app.toggleExpand('${e.id}')">
                             <div class="flex justify-between items-start">
                                 <div class="flex-1">
-                                    <div class="flex items-center gap-2 mb-1">
-                                        <span>${cat.icono || '📌'}</span>
-                                        <span class="text-xs font-bold" style="color: ${cat.color || '#3b82f6'}">${e.categoria}</span>
-                                    </div>
-                                    <h3 class="font-bold text-gray-900">${e.titulo}</h3>
-                                    <p class="text-sm text-gray-600">📅 ${dia} • 🕐 ${hora}</p>
-                                    ${e.notas ? `<p class="text-sm text-gray-600 italic mt-1">${e.notas}</p>` : ''}
+                                    <h3 class="font-bold text-gray-900 text-base">${e.titulo}</h3>
                                 </div>
-                                <button onclick="event.stopPropagation(); app.editar('${e.id}')" class="text-blue-500">✏️</button>
+                                <button onclick="event.stopPropagation(); app.editar('${e.id}')" class="text-blue-500 hover:text-blue-700 flex-shrink-0 ml-2">✏️</button>
+                            </div>
+
+                            <div class="event-details mt-3 pt-3 border-t border-gray-200">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <span>${cat.icono || '📌'}</span>
+                                    <span class="text-xs font-bold" style="color: ${cat.color || '#3b82f6'}">${e.categoria}</span>
+                                </div>
+                                <p class="text-sm text-gray-600 font-medium">
+                                    📅 ${dia} • 🕐 ${hora}${horaFin ? ` - ${horaFin}` : ''}
+                                    ${e.duracion_minutos ? ` (${Math.floor(e.duracion_minutos/60)}h ${e.duracion_minutos%60}m)` : ''}
+                                </p>
+                                ${e.notas ? `<p class="text-sm text-gray-600 italic mt-2">"${e.notas}"</p>` : ''}
                             </div>
                         </div>
                     `;
                 }).join('');
+            },
+
+            toggleExpand(id) {
+                expandedEventId = expandedEventId === id ? null : id;
+                this.renderizar();
             },
 
             async guardar(e) {
@@ -320,15 +544,24 @@
                 const titulo = document.getElementById('titulo').value;
                 const cat = document.getElementById('categoria').value;
                 const fecha = document.getElementById('fecha').value;
+                const horaFin = document.getElementById('hora-fin').value;
+                const duracion = document.getElementById('duracion').value;
                 const notas = document.getElementById('notas').value;
 
                 if(!cat) return alert('Selecciona categoría');
 
                 try {
-                    await client.from('eventos').insert([{
-                        titulo, categoria: cat, fecha: new Date(fecha).toISOString(),
-                        notas: notas || null, email_usuario: EMAIL
-                    }]);
+                    const fechaObj = new Date(fecha);
+                    const data = {
+                        titulo,
+                        categoria: cat,
+                        fecha: fechaObj.toISOString(),
+                        notas: notas || null,
+                        email_usuario: EMAIL,
+                        duracion_minutos: duracion ? parseInt(duracion) : null
+                    };
+
+                    await client.from('eventos').insert([data]);
 
                     // Notificar a Apps Script
                     fetch(APPS_SCRIPT_WEBHOOK, {
@@ -339,7 +572,7 @@
 
                     document.getElementById('form-evento').reset();
                     this.cargarEventos();
-                    alert('✅ Guardado');
+                    alert('✅ Evento guardado');
                 } catch(err) {
                     alert('❌ Error: ' + err.message);
                 }
@@ -353,34 +586,37 @@
                 document.getElementById('edit-categoria').value = e.categoria;
                 document.getElementById('edit-fecha').value = e.fecha.replace('Z', '').slice(0, 16);
                 document.getElementById('edit-notas').value = e.notas || '';
+                document.getElementById('edit-duracion').value = e.duracion_minutos || '';
                 this.abrirModal('modal-editar');
             },
 
             async guardarEdicion(e) {
                 e.preventDefault();
                 const id = document.getElementById('edit-id').value;
+                const duracion = document.getElementById('edit-duracion').value;
                 try {
                     await client.from('eventos').update({
                         titulo: document.getElementById('edit-titulo').value,
                         categoria: document.getElementById('edit-categoria').value,
                         fecha: new Date(document.getElementById('edit-fecha').value).toISOString(),
-                        notas: document.getElementById('edit-notas').value || null
+                        notas: document.getElementById('edit-notas').value || null,
+                        duracion_minutos: duracion ? parseInt(duracion) : null
                     }).eq('id', id);
                     this.cerrarModal();
                     this.cargarEventos();
-                    alert('✅ Actualizado');
+                    alert('✅ Evento actualizado');
                 } catch(err) {
                     alert('❌ Error: ' + err.message);
                 }
             },
 
             async borrar(id) {
-                if(!confirm('¿Eliminar?')) return;
+                if(!confirm('¿Eliminar este evento?')) return;
                 try {
                     await client.from('eventos').delete().eq('id', id);
                     this.cerrarModal();
                     this.cargarEventos();
-                    alert('✅ Eliminado');
+                    alert('✅ Evento eliminado');
                 } catch(err) {
                     alert('❌ Error: ' + err.message);
                 }
@@ -391,15 +627,18 @@
                 if(!text) return alert('Pega JSON');
                 try {
                     const data = JSON.parse(text.replace(/^```json/, '').replace(/^```/, '').replace(/```$/, '').trim());
-                    if(!Array.isArray(data)) throw new Error("Debe ser array");
+                    if(!Array.isArray(data)) throw new Error("Debe ser un array");
                     for(const item of data) {
                         if(item.titulo && item.categoria && item.fecha) {
                             const d = new Date(item.fecha);
                             if(!isNaN(d.getTime())) {
                                 await client.from('eventos').insert([{
-                                    titulo: item.titulo, categoria: item.categoria,
-                                    fecha: d.toISOString(), notas: item.notas || null,
-                                    email_usuario: EMAIL
+                                    titulo: item.titulo,
+                                    categoria: item.categoria,
+                                    fecha: d.toISOString(),
+                                    notas: item.notas || null,
+                                    email_usuario: EMAIL,
+                                    duracion_minutos: item.duracion_minutos || null
                                 }]);
                             }
                         }
@@ -414,7 +653,7 @@
 
                     document.getElementById('json_ia').value = '';
                     this.cargarEventos();
-                    alert('✅ Importados');
+                    alert(`✅ ${data.length} evento(s) importado(s)`);
                 } catch(err) {
                     alert('❌ Error JSON: ' + err.message);
                 }
@@ -427,18 +666,18 @@
 
             renderCategorias() {
                 const html = categorias.map(c => `
-                    <div class="flex justify-between p-3 bg-gray-50 rounded">
-                        <div class="flex items-center gap-2">
+                    <div class="flex justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-all">
+                        <div class="flex items-center gap-3">
                             <span class="text-2xl">${c.icono}</span>
                             <div>
-                                <p class="font-bold">${c.nombre}</p>
-                                <p class="text-xs" style="color: ${c.color};">■ ${c.color}</p>
+                                <p class="font-bold text-gray-900">${c.nombre}</p>
+                                <p class="text-xs text-gray-500" style="color: ${c.color};">■ ${c.color}</p>
                             </div>
                         </div>
-                        <button onclick="app.eliminarCategoria('${c.nombre}')" class="text-red-500">✕</button>
+                        <button onclick="app.eliminarCategoria('${c.nombre}')" class="text-red-500 hover:text-red-700 font-bold">✕</button>
                     </div>
                 `).join('');
-                document.getElementById('lista-categorias').innerHTML = html;
+                document.getElementById('lista-categorias').innerHTML = html || '<p class="text-gray-500 text-center py-4">Sin categorías</p>';
             },
 
             async agregarCategoria(e) {
@@ -452,14 +691,14 @@
                     }]);
                     document.getElementById('form-categoria').reset();
                     this.cargarCategorias();
-                    alert('✅ Creada');
+                    alert('✅ Categoría creada');
                 } catch(err) {
                     alert('❌ Error: ' + err.message);
                 }
             },
 
             async eliminarCategoria(nombre) {
-                if(!confirm('¿Eliminar?')) return;
+                if(!confirm(`¿Eliminar categoría "${nombre}"?`)) return;
                 try {
                     await client.from('categorias').delete().eq('nombre', nombre).eq('email_usuario', EMAIL);
                     this.cargarCategorias();
@@ -476,22 +715,29 @@
                 document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
             },
 
+            mostrarPrompt() {
+                this.abrirModal('modal-prompt');
+            },
+
             instalarPWA() {
                 if(deferredPrompt) {
                     deferredPrompt.prompt();
                     deferredPrompt.userChoice.then(({ outcome }) => {
-                        if(outcome === 'accepted') alert('✅ Instalada');
+                        if(outcome === 'accepted') alert('✅ App instalada correctamente');
                         deferredPrompt = null;
                     });
+                } else {
+                    alert('💡 Para instalar: abre el menú (⋮) y selecciona "Instalar aplicación"');
                 }
             },
 
             refrescar() {
                 this.cargarEventos();
+                alert('✅ Refrescado');
             },
 
-            info() {
-                alert('📱 v2.1\n✨ UI iPhone\n🎨 Categorías dinámicas\n📅 Filtros avanzados\n✏️ Editar/Eliminar\n📤 Importar JSON');
+            abrirGoogleCalendar() {
+                window.open(GOOGLE_CALENDAR_URL, '_blank');
             },
 
             copiarPrompt() {
@@ -499,23 +745,24 @@
                 navigator.clipboard.writeText(prompt).then(() => {
                     alert('✅ Prompt copiado al portapapeles');
                 }).catch(() => {
-                    alert('❌ Error al copiar');
+                    alert('❌ No se pudo copiar');
                 });
             }
         };
 
-        // Inicializar
+        // PWA Install Prompt
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
         });
 
-        window.app.init();
-
         // Service Worker
         if('serviceWorker' in navigator) {
             navigator.serviceWorker.register('sw.js').catch(() => {});
         }
+
+        // Init
+        window.addEventListener('load', () => app.init());
     </script>
 </body>
 </html>
