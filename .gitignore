@@ -4,6 +4,10 @@ package-lock.json
 yarn.lock
 pnpm-lock.yaml
 
+# pnpm
+.pnpm-store/
+.pnpm-debug.log
+
 # Wrangler
 .wrangler/
 dist/
