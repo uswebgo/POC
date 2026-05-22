@@ -10,5 +10,5 @@
 # /api/* → /api/* (pasar a través, no existirán localmente)
 #
 # El Worker (_worker.js) también maneja esto con fallback a index.html
-
-/*  /index.html  200
+# Nota: La regla /* → /index.html se comenta porque el Worker ya maneja
+# el SPA routing en JavaScript. Esto evita loops infinitos en Cloudflare.
