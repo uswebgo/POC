@@ -13,9 +13,11 @@
   Cache-Control: public, max-age=3600
   Content-Type: application/javascript
 
-# Cache para HTML (revalidar frecuentemente)
-/*.html
-  Cache-Control: public, max-age=3600, must-revalidate
+# NO cachear HTML - siempre versión fresca
+/index.html
+  Cache-Control: no-cache, no-store, must-revalidate, max-age=0
+  Pragma: no-cache
+  Expires: 0
 
 # Caché para assets (imágenes, etc)
 /assets/*
