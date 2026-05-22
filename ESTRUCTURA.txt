@@ -1,0 +1,221 @@
+📁 ESTRUCTURA PROYECTO - Agenda Inteligente Híbrida v2.0
+═════════════════════════════════════════════════════════════════
+
+agenda-inteligente/
+│
+├── 📄 index.html ........................ Aplicación principal
+│   └─ UI con Tailwind CSS
+│   └─ Responsive para móviles (iOS/Android)
+│   └─ Botones persistentes en la base
+│   └─ Metadatos PWA y Open Graph
+│   └─ Service Worker registration
+│
+├── 🔧 manifest.json ..................... Configuración PWA
+│   └─ Nombre y descripción de la app
+│   └─ Iconos (logos de Google Drive)
+│   └─ Tema color y display standalone
+│   └─ Shortcuts para acciones rápidas
+│
+├── ⚙️ sw.js ............................. Service Worker
+│   └─ Cache offline
+│   └─ Sincronización en background
+│   └─ Fallback para sin conexión
+│
+├── 📊 Code.gs ........................... Google Apps Script
+│   └─ Recibe datos del HTML
+│   └─ Guarda eventos en Google Sheets
+│   └─ Envía emails con GmailApp
+│   └─ Verifica notificaciones cada 10 min
+│   └─ Triggers automáticos
+│
+├── 📦 package.json ...................... Metadatos del proyecto
+│   └─ Nombre, versión, descripción
+│   └─ Repositorio GitHub
+│   └─ Keywords y autor
+│
+├── 🌐 _redirects ........................ Cloudflare Pages
+│   └─ Redirige todas las rutas a index.html
+│
+├── ⚡ wrangler.toml ..................... Configuración Cloudflare
+│   └─ Nombre y zona
+│   └─ Build settings
+│   └─ Upload format
+│
+├── 📚 README.md ......................... Documentación completa
+│   └─ Características
+│   └─ Instrucciones deployment Cloudflare Pages
+│   └─ Setup Google Apps Script
+│   └─ Cómo usar la app
+│   └─ Solución de problemas
+│
+├── ⚡ INICIO_RAPIDO.md .................. Guía rápida (5-10 min)
+│   └─ Pasos 1-5 para empezar
+│   └─ Qué hacer si algo falla
+│   └─ URLs importantes
+│
+├── 🚀 deploy.bat ........................ Script helper Windows
+│   └─ Menu interactivo
+│   └─ Iniciar Git
+│   └─ Subir a GitHub
+│   └─ Instalar Wrangler
+│   └─ Links rápidos
+│
+├── 📋 SETUP.md .......................... Setup detallado (obsoleto)
+│   └─ Versión antigua (mantener para ref.)
+│
+├── .gitignore ........................... Archivos a ignorar en Git
+│   └─ node_modules/
+│   └─ .env
+│   └─ .DS_Store
+│   └─ *.log
+│
+└── 📄 ESTRUCTURA.txt ..................... Este archivo
+
+
+═════════════════════════════════════════════════════════════════
+🎯 FLUJO TÉCNICO
+═════════════════════════════════════════════════════════════════
+
+USUARIO (Móvil/PC)
+       ↓
+   index.html (Tailwind CSS, PWA)
+       ↓
+   localStorage (cache local)
+       ↓
+   Google Apps Script (webhook)
+       ↓
+   Google Sheets (respaldo)
+       ↓
+   GmailApp (notificaciones)
+       ↓
+   USUARIO (email con aviso)
+
+
+═════════════════════════════════════════════════════════════════
+🚀 DEPLOYMENT
+═════════════════════════════════════════════════════════════════
+
+LOCAL
+  ↓ git push
+GITHUB (tu-usuario/agenda-inteligente)
+  ↓ conectar
+CLOUDFLARE PAGES
+  ↓ auto-deploy
+LIVE: https://agenda-inteligente.pages.dev
+
+
+═════════════════════════════════════════════════════════════════
+✨ CARACTERÍSTICAS CLAVE
+═════════════════════════════════════════════════════════════════
+
+UI/UX:
+✓ Tailwind CSS responsivo
+✓ Botones persistentes abajo (móvil style)
+✓ Icono y splash screens
+✓ Open Graph para RRSS
+
+FUNCIONALIDAD:
+✓ Crear eventos manualmente
+✓ Cargar eventos desde foto (IA/Gemini)
+✓ Repeticiones (diaria, semanal, anual)
+✓ Categorización (Laboral, Colegio, Cumple, Personal)
+
+SINCRONIZACIÓN:
+✓ Google Sheets respaldo automático
+✓ GmailApp notificaciones seguras
+✓ Verificación cada 10 minutos
+✓ Marcador "notificado" para evitar duplicados
+
+PWA:
+✓ Instalable en móviles iOS/Android
+✓ Funciona offline
+✓ Service Worker caché
+✓ Manifest.json estándar
+
+COMPARTIR:
+✓ WhatsApp
+✓ Telegram
+✓ LinkedIn
+✓ Twitter/X
+✓ API compartir nativa (móviles)
+
+
+═════════════════════════════════════════════════════════════════
+🔐 SEGURIDAD
+═════════════════════════════════════════════════════════════════
+
+✓ Sin credenciales almacenadas en HTML
+✓ GmailApp desde Google (OAuth seguro)
+✓ HTTPS en Cloudflare Pages
+✓ Service Worker para control de cache
+✓ No hay backend externo (solo Google)
+✓ Datos privados en tu cuenta Google
+
+
+═════════════════════════════════════════════════════════════════
+📱 RESPONSIVE BREAKPOINTS (Tailwind)
+═════════════════════════════════════════════════════════════════
+
+Mobile (< 640px)
+  - Full width
+  - Botones grandes (44px min)
+  - Single column
+
+Tablet (640px - 1024px)
+  - Max 600px container
+  - Mejor spacing
+
+Desktop (> 1024px)
+  - Max 600px centrado
+  - Similar a tablet (app-like)
+
+
+═════════════════════════════════════════════════════════════════
+📊 TAMAÑO PROYECTO
+═════════════════════════════════════════════════════════════════
+
+index.html ............... ~20 KB
+manifest.json ............ ~2 KB
+sw.js .................... ~2 KB
+Code.gs .................. ~8 KB
+otros archivos ........... ~3 KB
+────────────────────────────────
+TOTAL .................... ~35 KB
+
+(Sin dependencias npm necesarias - es vanilla)
+
+
+═════════════════════════════════════════════════════════════════
+🎓 TECNOLOGÍAS USADAS
+═════════════════════════════════════════════════════════════════
+
+Frontend:
+- HTML5 (semántico)
+- Tailwind CSS (CDN)
+- Vanilla JavaScript (ES6+)
+- Feather Icons (CDN)
+
+PWA:
+- manifest.json
+- Service Worker
+- localStorage API
+
+Backend:
+- Google Apps Script
+- Google Sheets API
+- GmailApp
+
+Deployment:
+- Git/GitHub
+- Cloudflare Pages (JAMstack)
+
+Externos:
+- Google Drive (imágenes CDN)
+- Gemini AI (carga de fotos)
+
+
+═════════════════════════════════════════════════════════════════
+Actualizado: Mayo 2026
+Versión: 2.0.0
+Autor: Javi
+═════════════════════════════════════════════════════════════════

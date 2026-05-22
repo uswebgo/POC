@@ -1,0 +1,21 @@
+name = "agenda-inteligente"
+type = "javascript"
+account_id = ""
+workers_dev = true
+route = ""
+zone_id = ""
+
+[env.production]
+name = "agenda-inteligente"
+routes = [
+  { pattern = "agenda-inteligente.pages.dev", zone_name = "" }
+]
+
+[build]
+command = ""
+cwd = "./"
+watch_paths = []
+
+[build.upload]
+format = "service-worker"
+main = "./index.html"
