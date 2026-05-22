@@ -5,9 +5,12 @@
  * - Cache-first para archivos estáticos (HTML, manifest, etc.)
  * - Network-first para datos de API (Supabase, Google Apps Script)
  * - Fallback offline para modo sin conexión
+ * - Auto-update en cada deploy (versioning)
  */
 
-const CACHE_NAME = 'agenda-v2';
+// Versión del cache - INCREMENTAR EN CADA DEPLOY
+const CACHE_VERSION = '2026-05-22-2';
+const CACHE_NAME = `agenda-${CACHE_VERSION}`;
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -36,17 +39,29 @@ self.addEventListener('install', event => {
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(cacheNames => {
+      console.log('SW: Cache actual:', CACHE_NAME);
+      console.log('SW: Cachés anteriores:', cacheNames);
       return Promise.all(
         cacheNames.map(cacheName => {
           if(cacheName !== CACHE_NAME) {
-            console.log('SW: Limpiando caché anterior:', cacheName);
+            console.log('SW: Eliminando caché viejo:', cacheName);
             return caches.delete(cacheName);
           }
         })
       );
     })
   );
+  // Tomar control inmediatamente de todos los clients
   self.clients.claim();
+  // Notificar a clientes que hay una nueva versión
+  self.clients.matchAll().then(clients => {
+    clients.forEach(client => {
+      client.postMessage({
+        type: 'SW_UPDATED',
+        version: CACHE_VERSION
+      });
+    });
+  });
 });
 
 self.addEventListener('fetch', event => {

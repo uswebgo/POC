@@ -881,9 +881,33 @@
             deferredPrompt = e;
         });
 
-        // Service Worker
+        // ===== SERVICE WORKER CON AUTO-UPDATE =====
         if('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js').catch(() => {});
+            navigator.serviceWorker.register('sw.js').then(registration => {
+                console.log('✅ Service Worker registrado');
+
+                // Escuchar actualizaciones
+                registration.onupdatefound = () => {
+                    const newWorker = registration.installing;
+                    newWorker.onstatechange = () => {
+                        if(newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                            // Nueva versión disponible
+                            console.log('🔄 Nueva versión disponible');
+                            app.showToast('Nueva versión disponible - Recargando...', 'info');
+                            setTimeout(() => window.location.reload(), 1500);
+                        }
+                    };
+                };
+
+                // Escuchar mensajes del SW
+                navigator.serviceWorker.onmessage = (event) => {
+                    if(event.data.type === 'SW_UPDATED') {
+                        console.log('🔄 SW Actualizado a versión:', event.data.version);
+                    }
+                };
+            }).catch(err => {
+                console.log('⚠️ SW error:', err);
+            });
         }
 
         // Init
