@@ -1,24 +1,10 @@
 name = "agenda-inteligente"
-type = "javascript"
-account_id = ""
-workers_dev = true
+main = "_worker.js"
 compatibility_date = "2026-05-22"
 compatibility_flags = ["nodejs_compat"]
 
-[env.production]
-name = "agenda-inteligente-prod"
-routes = []
-
-[build]
-command = ""
-cwd = ""
-
-[build.upload]
-format = "modules"
-main = "./_worker.js"
-
-[[assets]]
-binding = "ASSETS"
+[assets]
 directory = "."
-include = ["index.html", "manifest.json", "sw.js", "_headers", "_redirects", "assets/**/*"]
-exclude = [".git", "node_modules", "*.md", "*.gs", ".claude", ".github"]
+binding = "ASSETS"
+include = ["index.html", "manifest.json", "sw.js", "_headers", "_redirects"]
+exclude = [".git", "node_modules", "*.md", "*.gs", ".wrangler", "dist", "build", ".claude", ".github", ".env*"]
