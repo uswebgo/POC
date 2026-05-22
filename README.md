@@ -2,6 +2,14 @@
 
 Aplicación **Progressive Web App (PWA)** inteligente para planificación con sincronización en Google Sheets, notificaciones automáticas y funcionamiento offline.
 
+## ⚡ Inicio Rápido (5 min)
+
+1. **Google Apps Script**: Copia `Code.gs` → Desplegar como "Ejecución web"
+2. **Copiar Deployment ID** (algo como `AKfycbzX...`)
+3. **Abre la app**: https://agenda-inteligente.pages.dev
+4. **Configuración**: Email + Deployment ID
+5. **Activa Triggers**: Google Sheet → Menú 📅 → ⚙️ Configurar
+
 ## ✨ Características
 
 ✅ **Interfaz responsiva** - Diseño optimizado para móviles (iOS/Android)  
