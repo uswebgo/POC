@@ -675,12 +675,14 @@
 
                     await client.from('eventos').insert([data]);
 
-                    // Notificar a Apps Script
-                    fetch(APPS_SCRIPT_WEBHOOK, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ action: 'nuevoEvento', evento: { titulo, cat, fecha } })
-                    }).catch(() => {});
+                    // Notificar a Apps Script (sin CORS)
+                    const params = new URLSearchParams({
+                        action: 'nuevoEvento',
+                        titulo: titulo,
+                        categoria: cat
+                    });
+                    fetch(`${APPS_SCRIPT_WEBHOOK}?${params}`, { method: 'GET' })
+                        .catch(() => console.log('⚠️ Webhook opcional no disponible'));
 
                     document.getElementById('form-evento').reset();
                     this.cargarEventos();
@@ -770,11 +772,8 @@
                     }
 
                     // Notificar a Apps Script
-                    fetch(APPS_SCRIPT_WEBHOOK, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ action: 'verificarNotificaciones' })
-                    }).catch(() => {});
+                    fetch(`${APPS_SCRIPT_WEBHOOK}?action=verificarNotificaciones`, { method: 'GET' })
+                        .catch(() => console.log('⚠️ Webhook opcional no disponible'));
 
                     document.getElementById('json_ia').value = '';
                     this.cargarEventos();
