@@ -12,12 +12,84 @@
     <link rel="icon" href="https://lh3.googleusercontent.com/d/1eQJlngZSouUJxarOvjBuB0ZuwN66jrPR">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <title>Agenda Inteligente v2.3</title>
+    <title>Agenda Inteligente v2.4</title>
     <style>
+        /* ===== BASE MOBILE OPTIMIZATION ===== */
+        * {
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        input, textarea, select, button {
+            -webkit-user-select: text;
+            user-select: text;
+        }
+
         @supports(padding: max(0px)) {
             body { padding-bottom: max(100px, env(safe-area-inset-bottom)); }
         }
 
+        /* ===== TOAST NOTIFICATIONS ===== */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            max-width: 400px;
+        }
+
+        @media (max-width: 640px) {
+            .toast-container {
+                left: 10px;
+                right: 10px;
+                top: 10px;
+            }
+        }
+
+        .toast {
+            padding: 16px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            animation: slideIn 0.3s ease-out;
+            font-weight: 500;
+            color: white;
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+            word-break: break-word;
+        }
+
+        .toast.success { background: #10b981; }
+        .toast.error { background: #ef4444; }
+        .toast.info { background: #3b82f6; }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+        }
+
+        .toast.exit { animation: slideOut 0.3s ease-in; }
+
+        /* ===== NAVBAR ===== */
         .navbar-bottom {
             position: fixed;
             bottom: 0;
@@ -72,15 +144,15 @@
             to { opacity: 1; max-height: 500px; }
         }
 
-        /* Modal */
+        /* ===== MODAL - RESPONSIVE ===== */
         .modal-overlay {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0,0,0,0.5);
-            z-index: 50;
+            background: rgba(0,0,0,0.6);
+            z-index: 9998;
             display: none;
             backdrop-filter: blur(4px);
         }
@@ -93,12 +165,34 @@
 
         .modal-content {
             position: relative;
-            max-height: 90vh;
-            overflow-y-auto;
+            max-height: 95vh;
+            overflow-y: auto;
             width: 100%;
             background: white;
             border-radius: 24px 24px 0 0;
-            box-shadow: 0 -4px 16px rgba(0,0,0,0.15);
+            box-shadow: 0 -8px 32px rgba(0,0,0,0.2);
+            animation: slideUpModal 0.3s ease-out;
+        }
+
+        @keyframes slideUpModal {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+
+        .modal-content button,
+        .modal-content input,
+        .modal-content select,
+        .modal-content textarea {
+            min-height: 44px;
+            font-size: 16px;
+            touch-action: manipulation;
+        }
+
+        @media (max-width: 768px) {
+            .modal-content {
+                max-height: 100vh;
+                border-radius: 20px 20px 0 0;
+            }
         }
 
         /* Bottom Navigation - Mejorado */
@@ -173,6 +267,9 @@
     </style>
 </head>
 <body class="bg-gray-50">
+    <!-- Toast Notifications Container -->
+    <div id="toast-container" class="toast-container"></div>
+
     <!-- Header -->
     <header class="sticky top-0 bg-white border-b border-gray-200 shadow-sm z-30">
         <div class="max-w-2xl mx-auto px-4 py-3">
@@ -387,6 +484,21 @@
 
         // ===== APP OBJECT =====
         window.app = {
+            // ===== TOAST NOTIFICATIONS =====
+            showToast(message, type = 'info', duration = 3000) {
+                const container = document.getElementById('toast-container');
+                const toast = document.createElement('div');
+                toast.className = `toast ${type}`;
+                toast.textContent = message;
+
+                container.appendChild(toast);
+
+                setTimeout(() => {
+                    toast.classList.add('exit');
+                    setTimeout(() => toast.remove(), 300);
+                }, duration);
+            },
+
             async init() {
                 this.cargarCategorias();
                 this.cargarEventos();
@@ -548,7 +660,7 @@
                 const duracion = document.getElementById('duracion').value;
                 const notas = document.getElementById('notas').value;
 
-                if(!cat) return alert('Selecciona categoría');
+                if(!cat) return this.showToast('Selecciona categoría', 'error');
 
                 try {
                     const fechaObj = new Date(fecha);
@@ -572,9 +684,9 @@
 
                     document.getElementById('form-evento').reset();
                     this.cargarEventos();
-                    alert('✅ Evento guardado');
+                    this.showToast('✅ Evento guardado', 'success');
                 } catch(err) {
-                    alert('❌ Error: ' + err.message);
+                    this.showToast('❌ Error: ' + err.message);
                 }
             },
 
@@ -604,9 +716,9 @@
                     }).eq('id', id);
                     this.cerrarModal();
                     this.cargarEventos();
-                    alert('✅ Evento actualizado');
+                    this.showToast('✅ Evento actualizado', 'success');
                 } catch(err) {
-                    alert('❌ Error: ' + err.message);
+                    this.showToast('❌ Error: ' + err.message);
                 }
             },
 
@@ -627,9 +739,9 @@
                     // Recargar desde BD (para sincronizar otros devices)
                     setTimeout(() => this.cargarEventos(), 500);
 
-                    alert('✅ Evento eliminado');
+                    this.showToast('✅ Evento eliminado', 'success');
                 } catch(err) {
-                    alert('❌ Error: ' + err.message);
+                    this.showToast('❌ Error: ' + err.message);
                     // Recargar para sincronizar en caso de error
                     this.cargarEventos();
                 }
@@ -637,7 +749,7 @@
 
             async importarJSON() {
                 const text = document.getElementById('json_ia').value.trim();
-                if(!text) return alert('Pega JSON');
+                if(!text) return this.showToast('Pega JSON', 'error');
                 try {
                     const data = JSON.parse(text.replace(/^```json/, '').replace(/^```/, '').replace(/```$/, '').trim());
                     if(!Array.isArray(data)) throw new Error("Debe ser un array");
@@ -666,7 +778,7 @@
 
                     document.getElementById('json_ia').value = '';
                     this.cargarEventos();
-                    alert(`✅ ${data.length} evento(s) importado(s)`);
+                    this.showToast(`✅ ${data.length} evento(s) importado(s)`);
                 } catch(err) {
                     alert('❌ Error JSON: ' + err.message);
                 }
@@ -704,9 +816,9 @@
                     }]);
                     document.getElementById('form-categoria').reset();
                     this.cargarCategorias();
-                    alert('✅ Categoría creada');
+                    this.showToast('✅ Categoría creada', 'success');
                 } catch(err) {
-                    alert('❌ Error: ' + err.message);
+                    this.showToast('❌ Error: ' + err.message);
                 }
             },
 
@@ -716,7 +828,7 @@
                     await client.from('categorias').delete().eq('nombre', nombre).eq('email_usuario', EMAIL);
                     this.cargarCategorias();
                 } catch(err) {
-                    alert('❌ Error: ' + err.message);
+                    this.showToast('❌ Error: ' + err.message);
                 }
             },
 
@@ -736,17 +848,17 @@
                 if(deferredPrompt) {
                     deferredPrompt.prompt();
                     deferredPrompt.userChoice.then(({ outcome }) => {
-                        if(outcome === 'accepted') alert('✅ App instalada correctamente');
+                        if(outcome === 'accepted') this.showToast('✅ App instalada', 'success');
                         deferredPrompt = null;
                     });
                 } else {
-                    alert('💡 Para instalar: abre el menú (⋮) y selecciona "Instalar aplicación"');
+                    this.showToast('💡 Para instalar: abre el menú (⋮) y selecciona "Instalar aplicación"');
                 }
             },
 
             refrescar() {
                 this.cargarEventos();
-                alert('✅ Refrescado');
+                this.showToast('✅ Refrescado', 'success');
             },
 
             abrirGoogleCalendar() {
@@ -756,9 +868,9 @@
             copiarPrompt() {
                 const prompt = document.getElementById('prompt-ia').value;
                 navigator.clipboard.writeText(prompt).then(() => {
-                    alert('✅ Prompt copiado al portapapeles');
+                    this.showToast('✅ Prompt copiado al portapapeles');
                 }).catch(() => {
-                    alert('❌ No se pudo copiar');
+                    this.showToast('❌ No se pudo copiar', 'error');
                 });
             }
         };
