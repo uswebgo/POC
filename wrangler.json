@@ -1,0 +1,17 @@
+{
+  "pages_build_configuration": {
+    "build": {
+      "command": "echo 'Static site - no build needed'",
+      "cwd": null,
+      "root": ".",
+      "watch_paths": null,
+      "environment": {}
+    },
+    "env": {
+      "production": {
+        "name": "agenda-inteligente",
+        "vars": {}
+      }
+    }
+  }
+}
