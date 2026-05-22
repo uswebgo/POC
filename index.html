@@ -4,21 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="theme-color" content="#2563eb">
-    <meta name="description" content="Aplicación inteligente de planificación con Supabase">
+    <meta name="description" content="Aplicación inteligente de planificación">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Agenda Javi">
-    <meta property="og:title" content="Agenda Inteligente Híbrida">
-    <meta property="og:description" content="Planificación inteligente con Supabase y notificaciones automáticas">
-    <meta property="og:image" content="https://lh3.googleusercontent.com/d/1cAkrJpNh5KgpJ1tQnQktHniWrLMX6NO4">
-    <meta name="twitter:card" content="summary_large_image">
     <link rel="manifest" href="manifest.json">
     <link rel="icon" href="https://lh3.googleusercontent.com/d/1eQJlngZSouUJxarOvjBuB0ZuwN66jrPR">
-    <link rel="apple-touch-icon" href="https://lh3.googleusercontent.com/d/1eQJlngZSouUJxarOvjBuB0ZuwN66jrPR">
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <title>Agenda Inteligente Híbrida</title>
+    <title>Agenda Inteligente</title>
     <style>
         @supports(padding: max(0px)) {
             body { padding-bottom: max(100px, env(safe-area-inset-bottom)); }
@@ -29,28 +23,23 @@
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         .spinner { animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
-        .badge-category { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; display: inline-block; }
         .event-card { border-left: 4px solid; padding: 14px; border-radius: 12px; margin-bottom: 12px; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        .tab-active { border-bottom: 3px solid currentColor; }
-        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 50; }
-        .modal-content { position: fixed; bottom: 0; left: 0; right: 0; max-height: 90vh; overflow-y-auto; z-index: 51; background: white; border-radius: 24px 24px 0 0; }
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 50; display: none; }
+        .modal-overlay.active { display: flex; align-items: flex-end; }
+        .modal-content { position: relative; max-height: 90vh; overflow-y-auto; width: 100%; background: white; border-radius: 24px 24px 0 0; }
     </style>
 </head>
 <body class="bg-gray-50">
     <!-- Header -->
     <header class="sticky top-0 bg-white border-b border-gray-200 shadow-sm z-30">
         <div class="max-w-2xl mx-auto px-4 py-3">
-            <div class="flex items-center justify-between gap-3">
+            <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
-                    <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-lg">A</div>
+                    <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold">A</div>
                     <div>
                         <h1 class="text-lg font-bold text-gray-900">Agenda Inteligente</h1>
                         <p class="text-xs text-gray-500">Planificación Inteligente</p>
                     </div>
-                </div>
-                <div id="sync-status" class="flex items-center gap-1 text-xs px-3 py-1 rounded-full bg-blue-100 text-blue-700 hidden">
-                    <span class="spinner">⟳</span>
-                    <span>Sync</span>
                 </div>
             </div>
         </div>
@@ -58,25 +47,17 @@
 
     <!-- Filtros -->
     <div class="sticky top-14 bg-white border-b border-gray-200 z-20">
-        <div class="max-w-2xl mx-auto px-4 py-3">
+        <div class="max-w-2xl mx-auto px-4 py-3 space-y-3">
             <!-- Período -->
-            <div class="flex gap-2 mb-3 overflow-x-auto pb-2">
-                <button onclick="filtrarPeriodo('hoy')" class="period-btn px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap bg-blue-100 text-blue-700" data-period="hoy">
-                    📅 Hoy
-                </button>
-                <button onclick="filtrarPeriodo('semana')" class="period-btn px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap bg-gray-100 text-gray-700" data-period="semana">
-                    📆 Semana
-                </button>
-                <button onclick="filtrarPeriodo('todo')" class="period-btn px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap bg-gray-100 text-gray-700" data-period="todo">
-                    📋 Todo
-                </button>
+            <div class="flex gap-2 overflow-x-auto pb-2">
+                <button class="period-btn px-4 py-2 rounded-full text-sm font-medium bg-blue-100 text-blue-700" data-period="hoy">📅 Hoy</button>
+                <button class="period-btn px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-700" data-period="semana">📆 Semana</button>
+                <button class="period-btn px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-700" data-period="todo">📋 Todo</button>
             </div>
 
             <!-- Categorías -->
             <div class="flex gap-2 overflow-x-auto pb-2">
-                <button onclick="filtrarCategoria('todo')" class="category-btn px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap bg-gray-900 text-white" data-category="todo">
-                    Todas
-                </button>
+                <button class="category-btn px-3 py-1 rounded-full text-xs font-medium bg-gray-900 text-white" data-category="todo">Todas</button>
                 <div id="category-filters"></div>
             </div>
         </div>
@@ -84,115 +65,91 @@
 
     <!-- Contenido Principal -->
     <main class="max-w-2xl mx-auto px-4 container-safe">
-        <!-- Crear Evento Rápido -->
-        <div class="mt-4 mb-6 bg-gradient-to-r from-blue-500 to-purple-500 rounded-16 p-4 text-white">
-            <h2 class="font-bold mb-3 flex items-center gap-2">
-                <span>➕ Nuevo Evento</span>
-            </h2>
+        <!-- Crear Evento -->
+        <div class="mt-4 mb-6 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg p-4 text-white">
+            <h2 class="font-bold mb-3">➕ Nuevo Evento</h2>
             <form id="form-evento" class="space-y-3">
-                <input type="text" id="titulo" placeholder="¿Qué planeás?" class="w-full px-4 py-2 bg-white bg-opacity-90 text-gray-900 placeholder-gray-500 rounded-lg text-sm" required>
-
+                <input type="text" id="titulo" placeholder="¿Qué planeás?" class="w-full px-4 py-2 bg-white bg-opacity-90 text-gray-900 rounded-lg text-sm" required>
                 <div class="grid grid-cols-2 gap-3">
                     <select id="categoria" class="px-4 py-2 bg-white bg-opacity-90 text-gray-900 rounded-lg text-sm" required>
                         <option value="">Categoría</option>
                     </select>
                     <input type="datetime-local" id="fecha" class="px-4 py-2 bg-white bg-opacity-90 text-gray-900 rounded-lg text-sm" required>
                 </div>
-
-                <textarea id="notas" placeholder="Detalles (opcional)" class="w-full px-4 py-2 bg-white bg-opacity-90 text-gray-900 placeholder-gray-500 rounded-lg text-sm resize-none" rows="2"></textarea>
-
-                <button type="submit" class="w-full bg-white text-blue-600 font-bold py-2 rounded-lg hover:bg-blue-50 transition">
-                    Guardar Evento
-                </button>
+                <textarea id="notas" placeholder="Detalles (opcional)" class="w-full px-4 py-2 bg-white bg-opacity-90 text-gray-900 rounded-lg text-sm" rows="2"></textarea>
+                <button type="submit" class="w-full bg-white text-blue-600 font-bold py-2 rounded-lg">Guardar</button>
             </form>
         </div>
 
-        <!-- Extraer de Imagen/Archivo -->
+        <!-- Extraer de Imagen -->
         <div class="mb-6 bg-amber-50 border-l-4 border-amber-500 p-4 rounded">
             <h3 class="font-bold text-amber-900 mb-2">🤖 Extraer Eventos</h3>
-            <p class="text-sm text-amber-800 mb-3">Copia eventos de una foto, PDF o archivo de texto. Pega el contenido abajo.</p>
-            <textarea id="json_ia" placeholder='Pega aquí eventos en formato JSON: [{"titulo":"...", "categoria":"...", "fecha":"YYYY-MM-DDTHH:MM:SS", "notas":"..."}]' class="w-full px-4 py-3 border border-amber-200 rounded-lg text-sm font-mono resize-none" rows="4"></textarea>
-            <button onclick="importarJSON()" class="mt-3 w-full bg-amber-500 text-white font-bold py-2 rounded-lg hover:bg-amber-600 transition">
-                Importar Eventos
-            </button>
+            <p class="text-sm text-amber-800 mb-3">Pega eventos en JSON</p>
+            <textarea id="json_ia" placeholder='[{"titulo":"...","categoria":"...","fecha":"YYYY-MM-DDTHH:MM:SS","notas":"..."}]' class="w-full px-4 py-3 border border-amber-200 rounded-lg text-sm font-mono" rows="4"></textarea>
+            <button onclick="importarJSON()" class="mt-3 w-full bg-amber-500 text-white font-bold py-2 rounded-lg">Importar</button>
         </div>
 
         <!-- Lista de Eventos -->
         <div id="lista-eventos" class="space-y-3">
-            <div class="flex justify-center py-8">
-                <p class="text-gray-500 flex items-center gap-2">
-                    <span class="spinner">⟳</span> Cargando eventos...
-                </p>
+            <div class="text-center py-8 text-gray-500">
+                <p>Cargando eventos...</p>
             </div>
         </div>
     </main>
 
     <!-- Bottom Navigation -->
     <nav class="navbar-bottom bg-white border-t border-gray-200">
-        <div class="max-w-2xl mx-auto px-4 py-3 flex justify-around items-center">
-            <button onclick="instalarPWA()" class="flex flex-col items-center gap-1 text-gray-600 hover:text-blue-600 transition" title="Instalar">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                </svg>
-                <span class="text-xs">Instalar</span>
+        <div class="max-w-2xl mx-auto px-4 py-3 flex justify-around">
+            <button onclick="app.instalarPWA()" class="flex flex-col items-center gap-1 text-gray-600 hover:text-blue-600">
+                <span>📥</span><span class="text-xs">Instalar</span>
             </button>
-            <button onclick="refrescarEventos()" class="flex flex-col items-center gap-1 text-gray-600 hover:text-blue-600 transition" title="Refrescar">
-                <svg class="w-6 h-6 spinner" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                </svg>
-                <span class="text-xs">Refrescar</span>
+            <button onclick="app.refrescar()" class="flex flex-col items-center gap-1 text-gray-600 hover:text-blue-600">
+                <span>🔄</span><span class="text-xs">Refrescar</span>
             </button>
-            <button onclick="mostrarCategorias()" class="flex flex-col items-center gap-1 text-gray-600 hover:text-blue-600 transition" title="Categorías">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"></path>
-                </svg>
-                <span class="text-xs">Categorías</span>
+            <button onclick="app.abrirCategorias()" class="flex flex-col items-center gap-1 text-gray-600 hover:text-blue-600">
+                <span>🏷️</span><span class="text-xs">Categorías</span>
             </button>
-            <button onclick="mostrarConfig()" class="flex flex-col items-center gap-1 text-gray-600 hover:text-blue-600 transition" title="Configuración">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                </svg>
-                <span class="text-xs">Config</span>
+            <button onclick="app.info()" class="flex flex-col items-center gap-1 text-gray-600 hover:text-blue-600">
+                <span>ℹ️</span><span class="text-xs">Info</span>
             </button>
         </div>
     </nav>
 
-    <!-- Modal Editar Evento (hidden initially) -->
-    <div id="modal-editar" class="modal-overlay hidden" onclick="cerrarModal()">
-        <div class="modal-content" onclick="event.stopPropagation()">
-            <div class="sticky top-0 bg-white border-b border-gray-200 p-4 flex items-center justify-between">
-                <h2 class="text-lg font-bold">Editar Evento</h2>
-                <button onclick="cerrarModal()" class="text-gray-500 hover:text-gray-700">✕</button>
+    <!-- Modal Editar -->
+    <div id="modal-editar" class="modal-overlay">
+        <div class="modal-content">
+            <div class="sticky top-0 bg-white border-b border-gray-200 p-4 flex justify-between">
+                <h2 class="text-lg font-bold">Editar</h2>
+                <button onclick="app.cerrarModal()" class="text-gray-500">✕</button>
             </div>
             <form id="form-editar" class="p-4 space-y-4">
                 <input type="hidden" id="edit-id">
                 <input type="text" id="edit-titulo" placeholder="Título" class="w-full px-4 py-2 border border-gray-300 rounded-lg" required>
                 <select id="edit-categoria" class="w-full px-4 py-2 border border-gray-300 rounded-lg" required></select>
                 <input type="datetime-local" id="edit-fecha" class="w-full px-4 py-2 border border-gray-300 rounded-lg" required>
-                <textarea id="edit-notas" placeholder="Notas" class="w-full px-4 py-2 border border-gray-300 rounded-lg resize-none" rows="3"></textarea>
+                <textarea id="edit-notas" placeholder="Notas" class="w-full px-4 py-2 border border-gray-300 rounded-lg" rows="3"></textarea>
                 <div class="grid grid-cols-2 gap-3">
-                    <button type="submit" class="bg-blue-500 text-white font-bold py-2 rounded-lg hover:bg-blue-600">Guardar</button>
-                    <button type="button" onclick="borrarEvento(document.getElementById('edit-id').value)" class="bg-red-500 text-white font-bold py-2 rounded-lg hover:bg-red-600">Eliminar</button>
+                    <button type="submit" class="bg-blue-500 text-white font-bold py-2 rounded-lg">Guardar</button>
+                    <button type="button" onclick="app.borrar(document.getElementById('edit-id').value)" class="bg-red-500 text-white font-bold py-2 rounded-lg">Eliminar</button>
                 </div>
             </form>
         </div>
     </div>
 
     <!-- Modal Categorías -->
-    <div id="modal-categorias" class="modal-overlay hidden" onclick="cerrarModalCategorias()">
-        <div class="modal-content" onclick="event.stopPropagation()">
-            <div class="sticky top-0 bg-white border-b border-gray-200 p-4 flex items-center justify-between">
-                <h2 class="text-lg font-bold">Mis Categorías</h2>
-                <button onclick="cerrarModalCategorias()" class="text-gray-500 hover:text-gray-700">✕</button>
+    <div id="modal-categorias" class="modal-overlay">
+        <div class="modal-content">
+            <div class="sticky top-0 bg-white border-b border-gray-200 p-4 flex justify-between">
+                <h2 class="text-lg font-bold">Categorías</h2>
+                <button onclick="app.cerrarModal()" class="text-gray-500">✕</button>
             </div>
             <div class="p-4">
                 <div id="lista-categorias" class="space-y-3 mb-4"></div>
                 <form id="form-categoria" class="space-y-3 border-t pt-4">
-                    <h3 class="font-bold text-gray-900">Nueva Categoría</h3>
+                    <h3 class="font-bold">Nueva Categoría</h3>
                     <input type="text" id="cat-nombre" placeholder="Nombre" class="w-full px-4 py-2 border border-gray-300 rounded-lg" required>
                     <div class="grid grid-cols-2 gap-3">
-                        <input type="color" id="cat-color" value="#3b82f6" class="w-full h-10 border border-gray-300 rounded-lg cursor-pointer">
+                        <input type="color" id="cat-color" value="#3b82f6" class="w-full h-10 border border-gray-300 rounded-lg">
                         <input type="text" id="cat-icono" placeholder="Emoji" class="px-4 py-2 border border-gray-300 rounded-lg" maxlength="2" value="📌">
                     </div>
                     <button type="submit" class="w-full bg-green-500 text-white font-bold py-2 rounded-lg">Agregar</button>
@@ -202,417 +159,324 @@
     </div>
 
     <script>
-        // v2.1 - Fixed supabase declaration
-        feather.replace();
+        // Configuración
+        const SUPABASE_URL = 'https://ufwzavtzbmvieptszehd.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVmd3phdnR6Ym12aWVwdHN6ZWhkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0MjU0OTAsImV4cCI6MjA5NTAwMTQ5MH0.5dR8XRFX-y50jjWBmuVB9yT1LNV0nuZCDSlJlyDEdWw';
+        const EMAIL = 'j.castillo.bozo@gmail.com';
 
-        // ===== CONFIG =====
-        const SUPABASE_CONFIG = {
-            URL: 'https://ufwzavtzbmvieptszehd.supabase.co',
-            ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVmd3phdnR6Ym12aWVwdHN6ZWhkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0MjU0OTAsImV4cCI6MjA5NTAwMTQ5MH0.5dR8XRFX-y50jjWBmuVB9yT1LNV0nuZCDSlJlyDEdWw',
-            EMAIL: 'j.castillo.bozo@gmail.com',
-            APPS_SCRIPT_WEBHOOK: 'https://script.google.com/macros/s/AKfycbx4ydDuJRh6VFApW7KJ3CP7_5T0H5Xg3x9kizY_MwtWmwBY7MLR5b2lVLNvpm4nUnsXVQ/exec',
-        };
+        const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        const supabase = window.supabase.createClient(SUPABASE_CONFIG.URL, SUPABASE_CONFIG.ANON_KEY);
-
+        // Variables globales
         let eventos = [];
         let categorias = [];
-        let periodoActivo = 'hoy';
-        let categoriaActiva = 'todo';
+        let periodo = 'hoy';
+        let categoria = 'todo';
         let deferredPrompt = null;
 
-        // PWA
+        // App Object
+        window.app = {
+            async init() {
+                this.cargarCategorias();
+                this.cargarEventos();
+                setInterval(() => this.cargarEventos(), 30000);
+                this.setupEventListeners();
+            },
+
+            setupEventListeners() {
+                document.querySelectorAll('.period-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        document.querySelectorAll('.period-btn').forEach(b => {
+                            b.classList.remove('bg-blue-100', 'text-blue-700');
+                            b.classList.add('bg-gray-100', 'text-gray-700');
+                        });
+                        e.target.classList.remove('bg-gray-100', 'text-gray-700');
+                        e.target.classList.add('bg-blue-100', 'text-blue-700');
+                        periodo = e.target.dataset.period;
+                        this.renderizar();
+                    });
+                });
+
+                document.querySelectorAll('.category-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        document.querySelectorAll('.category-btn').forEach(b => {
+                            b.classList.remove('bg-gray-900', 'text-white');
+                            b.classList.add('bg-gray-100', 'text-gray-700');
+                        });
+                        e.target.classList.remove('bg-gray-100', 'text-gray-700');
+                        e.target.classList.add('bg-gray-900', 'text-white');
+                        categoria = e.target.dataset.category;
+                        this.renderizar();
+                    });
+                });
+
+                document.getElementById('form-evento').addEventListener('submit', (e) => this.guardar(e));
+                document.getElementById('form-editar').addEventListener('submit', (e) => this.guardarEdicion(e));
+                document.getElementById('form-categoria').addEventListener('submit', (e) => this.agregarCategoria(e));
+            },
+
+            async cargarCategorias() {
+                try {
+                    const { data } = await client.from('categorias').select('*').eq('email_usuario', EMAIL).order('nombre');
+                    categorias = data || [];
+                    this.actualizarFiltros();
+                } catch (err) {
+                    console.error('Error categorías:', err);
+                }
+            },
+
+            actualizarFiltros() {
+                const html = categorias.map(c => `
+                    <button class="category-btn px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700"
+                        data-category="${c.nombre}" style="border: 2px solid ${c.color};">
+                        ${c.icono} ${c.nombre}
+                    </button>
+                `).join('');
+                document.getElementById('category-filters').innerHTML = html;
+                this.setupEventListeners();
+
+                ['categoria', 'edit-categoria'].forEach(id => {
+                    const select = document.getElementById(id);
+                    if(select) {
+                        select.innerHTML = '<option value="">Categoría</option>' +
+                            categorias.map(c => `<option value="${c.nombre}">${c.icono} ${c.nombre}</option>`).join('');
+                    }
+                });
+            },
+
+            async cargarEventos() {
+                try {
+                    const { data } = await client.from('eventos').select('*').eq('email_usuario', EMAIL).order('fecha');
+                    eventos = data || [];
+                    this.renderizar();
+                } catch (err) {
+                    console.error('Error eventos:', err);
+                }
+            },
+
+            renderizar() {
+                const ahora = new Date();
+                const hoy = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate());
+                const finSemana = new Date(hoy.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+                let filtrados = eventos;
+
+                if(periodo === 'hoy') {
+                    filtrados = filtrados.filter(e => {
+                        const f = new Date(e.fecha);
+                        return f >= hoy && f < new Date(hoy.getTime() + 24 * 60 * 60 * 1000);
+                    });
+                } else if(periodo === 'semana') {
+                    filtrados = filtrados.filter(e => {
+                        const f = new Date(e.fecha);
+                        return f >= ahora && f < finSemana;
+                    });
+                }
+
+                if(categoria !== 'todo') {
+                    filtrados = filtrados.filter(e => e.categoria === categoria);
+                }
+
+                const container = document.getElementById('lista-eventos');
+                if(filtrados.length === 0) {
+                    container.innerHTML = '<div class="text-center py-8 text-gray-500">No hay eventos</div>';
+                    return;
+                }
+
+                container.innerHTML = filtrados.map(e => {
+                    const cat = categorias.find(c => c.nombre === e.categoria) || {};
+                    const fecha = new Date(e.fecha);
+                    const hora = fecha.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+                    const dia = fecha.toLocaleDateString('es-ES', { weekday: 'short', month: 'short', day: 'numeric' });
+                    return `
+                        <div class="event-card" style="border-left-color: ${cat.color || '#3b82f6'}" onclick="app.editar('${e.id}')">
+                            <div class="flex justify-between items-start">
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <span>${cat.icono || '📌'}</span>
+                                        <span class="text-xs font-bold" style="color: ${cat.color || '#3b82f6'}">${e.categoria}</span>
+                                    </div>
+                                    <h3 class="font-bold text-gray-900">${e.titulo}</h3>
+                                    <p class="text-sm text-gray-600">📅 ${dia} • 🕐 ${hora}</p>
+                                    ${e.notas ? `<p class="text-sm text-gray-600 italic mt-1">${e.notas}</p>` : ''}
+                                </div>
+                                <button onclick="event.stopPropagation(); app.editar('${e.id}')" class="text-blue-500">✏️</button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            },
+
+            async guardar(e) {
+                e.preventDefault();
+                const titulo = document.getElementById('titulo').value;
+                const cat = document.getElementById('categoria').value;
+                const fecha = document.getElementById('fecha').value;
+                const notas = document.getElementById('notas').value;
+
+                if(!cat) return alert('Selecciona categoría');
+
+                try {
+                    await client.from('eventos').insert([{
+                        titulo, categoria: cat, fecha: new Date(fecha).toISOString(),
+                        notas: notas || null, email_usuario: EMAIL
+                    }]);
+                    document.getElementById('form-evento').reset();
+                    this.cargarEventos();
+                    alert('✅ Guardado');
+                } catch(err) {
+                    alert('❌ Error: ' + err.message);
+                }
+            },
+
+            editar(id) {
+                const e = eventos.find(ev => ev.id === id);
+                if(!e) return;
+                document.getElementById('edit-id').value = id;
+                document.getElementById('edit-titulo').value = e.titulo;
+                document.getElementById('edit-categoria').value = e.categoria;
+                document.getElementById('edit-fecha').value = e.fecha.replace('Z', '').slice(0, 16);
+                document.getElementById('edit-notas').value = e.notas || '';
+                this.abrirModal('modal-editar');
+            },
+
+            async guardarEdicion(e) {
+                e.preventDefault();
+                const id = document.getElementById('edit-id').value;
+                try {
+                    await client.from('eventos').update({
+                        titulo: document.getElementById('edit-titulo').value,
+                        categoria: document.getElementById('edit-categoria').value,
+                        fecha: new Date(document.getElementById('edit-fecha').value).toISOString(),
+                        notas: document.getElementById('edit-notas').value || null
+                    }).eq('id', id);
+                    this.cerrarModal();
+                    this.cargarEventos();
+                    alert('✅ Actualizado');
+                } catch(err) {
+                    alert('❌ Error: ' + err.message);
+                }
+            },
+
+            async borrar(id) {
+                if(!confirm('¿Eliminar?')) return;
+                try {
+                    await client.from('eventos').delete().eq('id', id);
+                    this.cerrarModal();
+                    this.cargarEventos();
+                    alert('✅ Eliminado');
+                } catch(err) {
+                    alert('❌ Error: ' + err.message);
+                }
+            },
+
+            async importarJSON() {
+                const text = document.getElementById('json_ia').value.trim();
+                if(!text) return alert('Pega JSON');
+                try {
+                    const data = JSON.parse(text.replace(/^```json/, '').replace(/^```/, '').replace(/```$/, '').trim());
+                    if(!Array.isArray(data)) throw new Error("Debe ser array");
+                    for(const item of data) {
+                        if(item.titulo && item.categoria && item.fecha) {
+                            const d = new Date(item.fecha);
+                            if(!isNaN(d.getTime())) {
+                                await client.from('eventos').insert([{
+                                    titulo: item.titulo, categoria: item.categoria,
+                                    fecha: d.toISOString(), notas: item.notas || null,
+                                    email_usuario: EMAIL
+                                }]);
+                            }
+                        }
+                    }
+                    document.getElementById('json_ia').value = '';
+                    this.cargarEventos();
+                    alert('✅ Importados');
+                } catch(err) {
+                    alert('❌ Error JSON: ' + err.message);
+                }
+            },
+
+            abrirCategorias() {
+                this.renderCategorias();
+                this.abrirModal('modal-categorias');
+            },
+
+            renderCategorias() {
+                const html = categorias.map(c => `
+                    <div class="flex justify-between p-3 bg-gray-50 rounded">
+                        <div class="flex items-center gap-2">
+                            <span class="text-2xl">${c.icono}</span>
+                            <div>
+                                <p class="font-bold">${c.nombre}</p>
+                                <p class="text-xs" style="color: ${c.color};">■ ${c.color}</p>
+                            </div>
+                        </div>
+                        <button onclick="app.eliminarCategoria('${c.nombre}')" class="text-red-500">✕</button>
+                    </div>
+                `).join('');
+                document.getElementById('lista-categorias').innerHTML = html;
+            },
+
+            async agregarCategoria(e) {
+                e.preventDefault();
+                try {
+                    await client.from('categorias').insert([{
+                        email_usuario: EMAIL,
+                        nombre: document.getElementById('cat-nombre').value,
+                        color: document.getElementById('cat-color').value,
+                        icono: document.getElementById('cat-icono').value || '📌'
+                    }]);
+                    document.getElementById('form-categoria').reset();
+                    this.cargarCategorias();
+                    alert('✅ Creada');
+                } catch(err) {
+                    alert('❌ Error: ' + err.message);
+                }
+            },
+
+            async eliminarCategoria(nombre) {
+                if(!confirm('¿Eliminar?')) return;
+                try {
+                    await client.from('categorias').delete().eq('nombre', nombre).eq('email_usuario', EMAIL);
+                    this.cargarCategorias();
+                } catch(err) {
+                    alert('❌ Error: ' + err.message);
+                }
+            },
+
+            abrirModal(id) {
+                document.getElementById(id).classList.add('active');
+            },
+
+            cerrarModal() {
+                document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
+            },
+
+            instalarPWA() {
+                if(deferredPrompt) {
+                    deferredPrompt.prompt();
+                    deferredPrompt.userChoice.then(({ outcome }) => {
+                        if(outcome === 'accepted') alert('✅ Instalada');
+                        deferredPrompt = null;
+                    });
+                }
+            },
+
+            refrescar() {
+                this.cargarEventos();
+            },
+
+            info() {
+                alert('📱 v2.1\n✨ UI iPhone\n🎨 Categorías dinámicas\n📅 Filtros avanzados\n✏️ Editar/Eliminar\n📤 Importar JSON');
+            }
+        };
+
+        // Inicializar
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
         });
 
-        function instalarPWA() {
-            if(deferredPrompt) {
-                deferredPrompt.prompt();
-                deferredPrompt.userChoice.then(({ outcome }) => {
-                    if(outcome === 'accepted') alert('✅ Aplicación instalada');
-                    deferredPrompt = null;
-                });
-            }
-        }
-
-        function mostrarSyncStatus(mostrar) {
-            document.getElementById('sync-status')[mostrar ? 'classList' : 'classList'].remove('hidden');
-        }
-
-        // ===== CATEGORÍAS =====
-        async function cargarCategorias() {
-            try {
-                const { data, error } = await supabase
-                    .from('categorias')
-                    .select('*')
-                    .eq('email_usuario', SUPABASE_CONFIG.EMAIL)
-                    .order('nombre');
-
-                if(error) throw error;
-                categorias = data || [];
-                actualizarFiltrosCategorias();
-                actualizarSelectCategorias();
-            } catch(err) {
-                console.error('Error cargar categorías:', err);
-            }
-        }
-
-        function actualizarFiltrosCategorias() {
-            const container = document.getElementById('category-filters');
-            container.innerHTML = categorias.map(cat => `
-                <button onclick="filtrarCategoria('${cat.nombre}')"
-                    class="category-btn px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap bg-gray-100 text-gray-700"
-                    data-category="${cat.nombre}"
-                    style="border: 2px solid ${cat.color};">
-                    ${cat.icono} ${cat.nombre}
-                </button>
-            `).join('');
-        }
-
-        function actualizarSelectCategorias() {
-            const selects = ['#categoria', '#edit-categoria'];
-            selects.forEach(sel => {
-                const element = document.querySelector(sel);
-                if(element) {
-                    element.innerHTML = '<option value="">Categoría</option>' +
-                        categorias.map(cat => `<option value="${cat.nombre}">${cat.icono} ${cat.nombre}</option>`).join('');
-                }
-            });
-        }
-
-        async function agregarCategoria(e) {
-            e.preventDefault();
-            const nombre = document.getElementById('cat-nombre').value;
-            const color = document.getElementById('cat-color').value;
-            const icono = document.getElementById('cat-icono').value || '📌';
-
-            try {
-                const { error } = await supabase
-                    .from('categorias')
-                    .insert([{
-                        email_usuario: SUPABASE_CONFIG.EMAIL,
-                        nombre,
-                        color,
-                        icono
-                    }]);
-
-                if(error) throw error;
-                document.getElementById('form-categoria').reset();
-                cargarCategorias();
-                alert('✅ Categoría creada');
-            } catch(err) {
-                alert('❌ Error: ' + err.message);
-            }
-        }
-
-        async function eliminarCategoria(nombre) {
-            if(!confirm(`¿Eliminar categoría "${nombre}"?`)) return;
-            try {
-                await supabase.from('categorias').delete().eq('nombre', nombre).eq('email_usuario', SUPABASE_CONFIG.EMAIL);
-                cargarCategorias();
-            } catch(err) {
-                alert('❌ Error: ' + err.message);
-            }
-        }
-
-        // ===== EVENTOS =====
-        async function cargarEventos() {
-            mostrarSyncStatus(true);
-            try {
-                const { data, error } = await supabase
-                    .from('eventos')
-                    .select('*')
-                    .eq('email_usuario', SUPABASE_CONFIG.EMAIL)
-                    .eq('notificado', false)
-                    .order('fecha', { ascending: true });
-
-                if(error) throw error;
-                eventos = data || [];
-                renderizarEventos();
-            } catch(err) {
-                console.error('Error cargar eventos:', err);
-            } finally {
-                mostrarSyncStatus(false);
-            }
-        }
-
-        function renderizarEventos() {
-            const ahora = new Date();
-            const hoy = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate());
-            const finSemana = new Date(hoy.getTime() + 7 * 24 * 60 * 60 * 1000);
-
-            let filtrados = eventos;
-
-            // Filtrar por período
-            if(periodoActivo === 'hoy') {
-                filtrados = filtrados.filter(e => {
-                    const fecha = new Date(e.fecha);
-                    return fecha >= hoy && fecha < new Date(hoy.getTime() + 24 * 60 * 60 * 1000);
-                });
-            } else if(periodoActivo === 'semana') {
-                filtrados = filtrados.filter(e => {
-                    const fecha = new Date(e.fecha);
-                    return fecha >= ahora && fecha < finSemana;
-                });
-            }
-
-            // Filtrar por categoría
-            if(categoriaActiva !== 'todo') {
-                filtrados = filtrados.filter(e => e.categoria === categoriaActiva);
-            }
-
-            const container = document.getElementById('lista-eventos');
-
-            if(filtrados.length === 0) {
-                container.innerHTML = '<div class="text-center py-12 text-gray-500"><p>No hay eventos</p></div>';
-                return;
-            }
-
-            container.innerHTML = filtrados.map(evento => {
-                const categoria = categorias.find(c => c.nombre === evento.categoria) || {};
-                const fecha = new Date(evento.fecha);
-                const hora = fecha.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-                const dia = fecha.toLocaleDateString('es-ES', { weekday: 'short', month: 'short', day: 'numeric' });
-
-                return `
-                    <div class="event-card fade-in" style="border-left-color: ${categoria.color || '#3b82f6'}; cursor: pointer;" onclick="abrirEditar('${evento.id}')">
-                        <div class="flex items-start justify-between gap-3">
-                            <div class="flex-1">
-                                <div class="flex items-center gap-2 mb-2">
-                                    <span class="text-xl">${categoria.icono || '📌'}</span>
-                                    <span class="badge-category" style="background: ${categoria.color || '#3b82f6'}20; color: ${categoria.color || '#3b82f6'};"><strong>${evento.categoria}</strong></span>
-                                </div>
-                                <h3 class="font-bold text-gray-900 mb-1">${evento.titulo}</h3>
-                                <p class="text-sm text-gray-600 mb-2">📅 ${dia} • 🕐 ${hora}</p>
-                                ${evento.notas ? `<p class="text-sm text-gray-600 italic">${evento.notas}</p>` : ''}
-                            </div>
-                            <button onclick="event.stopPropagation(); editarRapido('${evento.id}')" class="text-blue-500 hover:text-blue-700">
-                                ✏️
-                            </button>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function filtrarPeriodo(periodo) {
-            periodoActivo = periodo;
-            document.querySelectorAll('.period-btn').forEach(btn => {
-                btn.classList.remove('bg-blue-100', 'text-blue-700');
-                btn.classList.add('bg-gray-100', 'text-gray-700');
-            });
-            event.target.classList.remove('bg-gray-100', 'text-gray-700');
-            event.target.classList.add('bg-blue-100', 'text-blue-700');
-            renderizarEventos();
-        }
-
-        function filtrarCategoria(categoria) {
-            categoriaActiva = categoria;
-            document.querySelectorAll('.category-btn').forEach(btn => {
-                btn.classList.remove('bg-gray-900', 'text-white');
-                btn.classList.add('bg-gray-100', 'text-gray-700');
-            });
-            event.target.classList.remove('bg-gray-100', 'text-gray-700');
-            event.target.classList.add('bg-gray-900', 'text-white');
-            renderizarEventos();
-        }
-
-        async function guardarEvento(e) {
-            e.preventDefault();
-            const titulo = document.getElementById('titulo').value;
-            const categoria = document.getElementById('categoria').value;
-            const fecha = document.getElementById('fecha').value;
-            const notas = document.getElementById('notas').value;
-
-            if(!categoria) return alert('⚠️ Selecciona una categoría');
-
-            mostrarSyncStatus(true);
-            try {
-                const { data, error } = await supabase
-                    .from('eventos')
-                    .insert([{
-                        titulo,
-                        categoria,
-                        fecha: new Date(fecha).toISOString(),
-                        notas: notas || null,
-                        email_usuario: SUPABASE_CONFIG.EMAIL,
-                    }]);
-
-                if(error) throw error;
-
-                // Notificar a Apps Script
-                fetch(SUPABASE_CONFIG.APPS_SCRIPT_WEBHOOK, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        action: 'nuevoEvento',
-                        evento: { titulo, categoria, fecha }
-                    })
-                }).catch(() => {});
-
-                document.getElementById('form-evento').reset();
-                cargarEventos();
-                alert('✅ Evento guardado');
-            } catch(err) {
-                alert('❌ Error: ' + err.message);
-            } finally {
-                mostrarSyncStatus(false);
-            }
-        }
-
-        async function abrirEditar(id) {
-            const evento = eventos.find(e => e.id === id);
-            if(!evento) return;
-
-            document.getElementById('edit-id').value = id;
-            document.getElementById('edit-titulo').value = evento.titulo;
-            document.getElementById('edit-categoria').value = evento.categoria;
-            document.getElementById('edit-fecha').value = evento.fecha.replace('Z', '').slice(0, 16);
-            document.getElementById('edit-notas').value = evento.notas || '';
-
-            document.getElementById('modal-editar').classList.remove('hidden');
-        }
-
-        function cerrarModal() {
-            document.getElementById('modal-editar').classList.add('hidden');
-        }
-
-        async function guardarEdicion(e) {
-            e.preventDefault();
-            const id = document.getElementById('edit-id').value;
-            const titulo = document.getElementById('edit-titulo').value;
-            const categoria = document.getElementById('edit-categoria').value;
-            const fecha = document.getElementById('edit-fecha').value;
-            const notas = document.getElementById('edit-notas').value;
-
-            try {
-                const { error } = await supabase
-                    .from('eventos')
-                    .update({
-                        titulo,
-                        categoria,
-                        fecha: new Date(fecha).toISOString(),
-                        notas: notas || null,
-                    })
-                    .eq('id', id);
-
-                if(error) throw error;
-                cerrarModal();
-                cargarEventos();
-                alert('✅ Evento actualizado');
-            } catch(err) {
-                alert('❌ Error: ' + err.message);
-            }
-        }
-
-        async function borrarEvento(id) {
-            if(!confirm('¿Eliminar este evento?')) return;
-            try {
-                const { error } = await supabase.from('eventos').delete().eq('id', id);
-                if(error) throw error;
-                cerrarModal();
-                cargarEventos();
-                alert('✅ Evento eliminado');
-            } catch(err) {
-                alert('❌ Error: ' + err.message);
-            }
-        }
-
-        function editarRapido(id) {
-            abrirEditar(id);
-        }
-
-        // ===== IMPORTAR JSON =====
-        async function importarJSON() {
-            const rawText = document.getElementById('json_ia').value.trim();
-            if(!rawText) return alert('⚠️ Pega un JSON');
-
-            try {
-                const cleanText = rawText.replace(/^```json/, '').replace(/^```/, '').replace(/```$/, '').trim();
-                const data = JSON.parse(cleanText);
-
-                if(!Array.isArray(data)) throw new Error("Debe ser un array []");
-
-                let importados = 0;
-                for(const item of data) {
-                    if(item.titulo && item.categoria && item.fecha) {
-                        const d = new Date(item.fecha);
-                        if(!isNaN(d.getTime())) {
-                            await supabase
-                                .from('eventos')
-                                .insert([{
-                                    titulo: item.titulo,
-                                    categoria: item.categoria,
-                                    fecha: d.toISOString(),
-                                    notas: item.notas || null,
-                                    email_usuario: SUPABASE_CONFIG.EMAIL,
-                                }]);
-                            importados++;
-                        }
-                    }
-                }
-
-                if(importados > 0) {
-                    fetch(SUPABASE_CONFIG.APPS_SCRIPT_WEBHOOK, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ action: 'verificarNotificaciones', cantidad: importados })
-                    }).catch(() => {});
-                }
-
-                document.getElementById('json_ia').value = '';
-                cargarEventos();
-                alert(`✅ ${importados} eventos importados`);
-            } catch(err) {
-                alert('❌ Error JSON: ' + err.message);
-            }
-        }
-
-        // ===== MODALES =====
-        function mostrarCategorias() {
-            const modal = document.getElementById('modal-categorias');
-            modal.classList.remove('hidden');
-            renderCategorias();
-        }
-
-        function cerrarModalCategorias() {
-            document.getElementById('modal-categorias').classList.add('hidden');
-        }
-
-        function renderCategorias() {
-            const container = document.getElementById('lista-categorias');
-            container.innerHTML = categorias.map(cat => `
-                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div class="flex items-center gap-2">
-                        <span class="text-2xl">${cat.icono}</span>
-                        <div>
-                            <p class="font-bold text-gray-900">${cat.nombre}</p>
-                            <p class="text-xs text-gray-500" style="color: ${cat.color};">■ ${cat.color}</p>
-                        </div>
-                    </div>
-                    <button onclick="eliminarCategoria('${cat.nombre}')" class="text-red-500 hover:text-red-700 font-bold">✕</button>
-                </div>
-            `).join('');
-        }
-
-        function mostrarConfig() {
-            alert('📱 Versión: 2.0\n🔄 Auto-sincronización cada 30s\n✉️ Notificaciones por email\n🎨 Categorías personalizables');
-        }
-
-        function refrescarEventos() {
-            cargarEventos();
-        }
-
-        // ===== INICIALIZACIÓN =====
-        document.getElementById('form-evento').addEventListener('submit', guardarEvento);
-        document.getElementById('form-editar').addEventListener('submit', guardarEdicion);
-        document.getElementById('form-categoria').addEventListener('submit', agregarCategoria);
-
-        cargarCategorias();
-        cargarEventos();
-        setInterval(cargarEventos, 30000);
+        window.app.init();
 
         // Service Worker
         if('serviceWorker' in navigator) {
