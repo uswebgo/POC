@@ -1,140 +1,145 @@
-# ⚙️ Configuración Cloudflare Pages — Agenda Inteligente
+# ⚙️ Configuración Cloudflare — Agenda Inteligente v2
 
-**IMPORTANTE**: Cloudflare Pages para sitios **estáticos** NO usa wrangler.toml.  
-Si ves errores de build, es porque está intentando ejecutar comandos de deploy incorrectos.
+## 🏗️ Arquitectura Actual: Hybrid Mode
 
----
-
-## ✅ Configuración Correcta (MANUAL)
-
-### 1. Dashboard de Cloudflare
-
-1. Ve a: https://dash.cloudflare.com/
-2. **Pages** → **agenda-inteligente**
-3. Click en **Settings** (arriba)
-4. Click en **Builds & deployments** (izquierda)
-
-### 2. Cambiar Build Settings
-
-**IMPORTANTE: Estos campos deben quedar VACÍOS o en valores por defecto**
+**Agenda Inteligente usa Cloudflare Workers (no Pages puro):**
 
 ```
-Build command:           [DÉJALO VACÍO] ← Click en X si tiene algo
-Build output directory:  [DÉJALO VACÍO] o . (punto)
-Root directory:          / (slash)
-Deploy command:          [DÉJALO VACÍO] ← Click en X si tiene algo
+┌─────────────────────────────────────────────┐
+│ Cliente (Navegador / App Móvil)             │
+└────────────────┬────────────────────────────┘
+                 │
+                 ▼
+┌─────────────────────────────────────────────┐
+│ Cloudflare Workers (_worker.js)             │
+│ ├─ Sirve archivos estáticos (index.html)    │
+│ ├─ Maneja SPA routing (/events, /settings)  │
+│ ├─ Health check (/api/health)               │
+│ └─ Seguridad headers                        │
+└────────────────┬────────────────────────────┘
+                 │
+          ┌──────┴───────┐
+          ▼              ▼
+    ┌──────────┐  ┌────────────────┐
+    │ Supabase │  │ Google Apps    │
+    │ (datos)  │  │ Script (email) │
+    └──────────┘  └────────────────┘
 ```
 
-### 3. Guardar
+**¿Por qué Workers y no Pages puro?**
 
-Click en **Save** (esquina superior derecha).
-
----
-
-## 🚀 Qué sucede después
-
-1. Cloudflare **automáticamente redeployará** con los nuevos settings
-2. Espera ~30-60 segundos
-3. Verifica el **Build log** → Status debe ser ✅ **Success**
+✅ Más control sobre rutas y SPA routing
+✅ Health check endpoint (`/api/health`)
+✅ Headers y redirects configurables
+✅ Preparado para futuras APIs
+✅ Mejor manejo de errores
+✅ Mismo resultado que Pages, pero más flexible
 
 ---
 
-## 📋 Checklist
+## 🚀 Deployment
 
-- [ ] Settings → Builds & deployments abierto
-- [ ] "Build command" está VACÍO
-- [ ] "Deploy command" está VACÍO
-- [ ] "Root directory" es `/`
-- [ ] Click en Save
-- [ ] Status cambió a "Building..."
-- [ ] Esperar a que termine (30-60 seg)
-- [ ] Status ahora es ✅ Success
-- [ ] App accesible en https://agenda-inteligente.pages.dev
+### Opción 1: Local Development
+```bash
+npm run dev
+# Abre http://localhost:8787
+```
+
+### Opción 2: Production Deploy
+```bash
+npm run deploy
+# Se ejecuta: wrangler deploy
+# Publica en Cloudflare Workers
+```
+
+### Opción 3: Staging (Testing)
+```bash
+npm run deploy:preview
+# Desplega en ambiente staging para testing
+```
 
 ---
 
-## 🔍 Verificación
+## 📋 Verificación Post-Deploy
 
-Cuando esté deployado, deberías ver:
+### Health Check
+```bash
+curl https://agenda-inteligente.pages.dev/api/health
 
+# Respuesta esperada:
+{
+  "status": "ok",
+  "timestamp": "2026-05-22T...",
+  "app": "agenda-inteligente",
+  "version": "2.0.0"
+}
+```
+
+### Headers
 ```bash
 curl -I https://agenda-inteligente.pages.dev
 
-HTTP/2 200
-Content-Type: text/html; charset=UTF-8
-x-content-type-options: nosniff
-x-frame-options: SAMEORIGIN
-cache-control: public, max-age=3600, must-revalidate
+# Deberías ver:
+# X-Content-Type-Options: nosniff
+# X-Frame-Options: SAMEORIGIN
+# Strict-Transport-Security: max-age=31536000
 ```
+
+### App Funcional
+1. Abre https://agenda-inteligente.pages.dev
+2. Verifica que puedas:
+   - Crear eventos
+   - Ver lista de eventos
+   - Navegar sin errores (SPA routing)
+   - Service Worker activo (offline mode)
 
 ---
 
-## ❌ Si sigue fallando
+## ⚙️ Archivos Clave
 
-### 1. Verificar que NO hay archivos "wrangler"
-
-```bash
-cd "C:\Users\LENOVO\Documents\Agenda Javi"
-ls *.toml  # No debe haber nada
-ls *.json  # Solo package.json (sin wrangler.json)
-```
-
-### 2. Limpiar git
-
-```bash
-# Si agregaste wrangler.toml antes, eliminarlo del historio:
-git rm --cached wrangler.toml
-git commit -m "remove: wrangler.toml"
-git push origin main
-```
-
-### 3. Hard reset en Cloudflare
-
-- Ve a Pages → agenda-inteligente
-- Botón "..." (3 puntos) → **Clear build cache**
-- Trigger a new deployment (el botón de play)
-
-### 4. Si aún falla
-
-Contacta a Cloudflare Support con:
-- URL: https://dash.cloudflare.com/
-- Proyecto: agenda-inteligente
-- Error en Build log: [copiar y pegar el error]
+| Archivo | Propósito |
+|---------|-----------|
+| `_worker.js` | Servidor Cloudflare Workers (SPA routing) |
+| `wrangler.toml` | Configuración de Workers |
+| `_headers` | Headers HTTP de seguridad + cache |
+| `_redirects` | SPA routing (fallback a index.html) |
+| `index.html` | App principal (PWA) |
+| `sw.js` | Service Worker (offline + caching) |
+| `manifest.json` | PWA manifest (instalable) |
 
 ---
 
-## 🎯 Por qué funciona así
+## 🛠️ Troubleshooting
 
-| Tipo de Proyecto | Herramienta | Build | Deploy |
-|---|---|---|---|
-| **Static Site (Nuestro caso)** | Cloudflare Pages | ❌ No | ✅ Automático |
-| **Next.js / React** | Cloudflare Pages | ✅ `npm run build` | ✅ Automático |
-| **Cloudflare Worker** | Wrangler + Workers | ✅ Wrangler build | ✅ `wrangler deploy` |
-| **API Backend** | Node / Python | ✅ npm install | ✅ Manual |
-
-**La Agenda Inteligente es un sitio estático** (HTML + JS vanilla + CSS Tailwind via CDN).  
-Cloudflare Pages lo detecta automáticamente y lo sirve tal cual.
+| Problema | Causa | Solución |
+|----------|-------|----------|
+| `net::ERR_CONNECTION_CLOSED` | RLS policies bloqueando | Verificar en Supabase RLS settings |
+| App muestra error en console | CORS desde Supabase | Supabase CORS ya configurable por defecto |
+| Service Worker no funciona | Headers incorrectos | Verificar `_headers` (incluye Service-Worker-Allowed) |
+| Rutas de SPA 404 | SPA routing incorrecto | Verificar `_redirects` redirige todo a index.html |
+| Health check falla | Worker no desplegado | Ejecutar `npm run deploy` |
 
 ---
 
 ## 📚 Referencias
 
-- [Cloudflare Pages Docs](https://developers.cloudflare.com/pages/)
-- [Build settings](https://developers.cloudflare.com/pages/platform/builds/build-configuration/)
-- [Wrangler (NO necesario para Pages estático)](https://developers.cloudflare.com/workers/cli-wrangler/)
+- [Cloudflare Workers Docs](https://developers.cloudflare.com/workers/)
+- [KV Asset Handler](https://developers.cloudflare.com/workers/runtime-apis/kv/static-assets/)
+- [Wrangler CLI](https://developers.cloudflare.com/workers/cli-wrangler/)
 
 ---
 
 ## ✨ Resultado Final
 
-Una vez configurado correctamente:
-
 ```
-✅ Tu app está en: https://agenda-inteligente.pages.dev
-✅ Auto-deploy con cada git push
-✅ HTTPS automático
+✅ App en vivo: https://agenda-inteligente.pages.dev
+✅ Deploy con: npm run deploy
+✅ Dev local: npm run dev
+✅ Health check: /api/health
+✅ HTTPS automático (Cloudflare)
 ✅ Global CDN
 ✅ $0/mes
+✅ Arquitectura clara y documentada
 ```
 
-**¡Listo!** No hay más errores de build. 🎉
+**¡Deployment listo!** 🚀

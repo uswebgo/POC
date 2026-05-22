@@ -14,33 +14,31 @@
 | **Repositorio** | https://github.com/uswebgo/agenda-inteligente |
 | **Rama** | main |
 | **Tipo** | PWA estático + Google Apps Script |
-| **Cloudflare** | Pages (NO Workers) |
-| **Google Apps Script** | Centralizado para eventos + emails |
-| **Base de datos** | Google Sheets (respaldo) |
+| **Cloudflare** | Workers (Hybrid Mode - sirve assets + SPA routing) |
+| **Google Apps Script** | Centralizado para eventos + emails + webhooks |
+| **Base de datos** | Supabase PostgreSQL (principal) |
 
 ---
 
-## 🏗️ Arquitectura
+## 🏗️ Arquitectura Hybrid: Cloudflare Workers + Supabase
 
 ```
 Cliente (navegador/móvil)
     │
     ▼
-Cloudflare Pages (assets estáticos)
-    ├─ index.html (app principal)
-    ├─ manifest.json (PWA config)
-    ├─ sw.js (Service Worker - offline)
-    ├─ _headers (seguridad + caché)
-    └─ _redirects (SPA routing)
+Cloudflare Workers (_worker.js)
+    ├─ Sirve index.html (app principal)
+    ├─ Maneja SPA routing (/events, /settings)
+    ├─ Health check (/api/health)
+    ├─ Headers de seguridad + cache control
+    └─ PWA assets (manifest.json, sw.js)
          │
-         ▼
-    Google Apps Script (centralizado)
-         ├─ Recibe eventos del HTML
-         ├─ Guarda en Google Sheets
-         └─ Envía emails con GmailApp
-              │
-              ▼
-         Google Sheets (respaldo + auditoría)
+         ├──────────────────┬──────────────────┐
+         ▼                  ▼                  ▼
+    Supabase          Google Apps        Google Sheets
+    PostgreSQL        Script             (auditoria)
+    (datos vivos)     (webhooks          (opcional)
+                      + emails)
 ```
 
 ---
@@ -107,16 +105,29 @@ const EMAIL_DESTINO = 'j.castillo.bozo@gmail.com'; // Tu email aquí
 AKfycbwYHIpA0-QMBCEQfb2NKJDFt4MiWxNfWUDpnmiYzxrqx2m6dIJ-WZopRkLMMeD7Y3GALg
 ```
 
-### Cloudflare Pages (Dashboard)
+### Cloudflare Workers (wrangler.toml)
 
-**CONFIGURACIÓN CORRECTA - Sin wrangler.toml:**
+**CONFIGURACIÓN CORRECTA:**
 
+```toml
+# Archivo: wrangler.toml
+name = "agenda-inteligente"
+main = "_worker.js"
+compatibility_date = "2026-05-22"
+compatibility_flags = ["nodejs_compat"]
+
+[assets]
+directory = "."
+binding = "ASSETS"
+include = ["index.html", "manifest.json", "sw.js", "_headers", "_redirects"]
+exclude = [".git", "node_modules", "*.md", "*.gs", ".wrangler"]
 ```
-Settings → Builds & deployments:
-- Build command:          (VACÍO)
-- Build output directory: (VACÍO o /)
-- Root directory:         /
-- Deploy command:         (VACÍO)
+
+**Deploy:**
+```bash
+npm run deploy
+# o
+wrangler deploy
 ```
 
 ---
@@ -194,11 +205,13 @@ git push origin main
 
 | Síntoma | Causa | Solución |
 |---------|-------|----------|
-| Build error en Cloudflare | wrangler.toml presente | Eliminar wrangler.toml, dejar vacío "Deploy command" |
-| App no sincroniza | Deployment ID incorrecto | Verificar en Google Apps Script → Ejecutar web |
-| Emails no llegan | EMAIL_DESTINO mal escrito | Verificar en Code.gs línea 8 |
-| Service Worker no funciona | sw.js bloqueado por CSP | Verificar `_headers` incluye service-worker |
-| PWA no se instala | No es HTTPS | Cloudflare Pages siempre es HTTPS ✓ |
+| `net::ERR_CONNECTION_CLOSED` | Supabase RLS policy bloqueando | Verificar RLS en Supabase → Events tabla → Policies |
+| Worker no sirve archivos | Wrangler.toml mal configurado | Verificar `[assets]` section incluya todos archivos necesarios |
+| App no sincroniza a Supabase | Deployment ID incorrecto | Verificar APPS_SCRIPT_WEBHOOK en wrangler.toml |
+| Emails no llegan | Webhook no ejecutado | Verificar que Google Apps Script esté desplegado (`Deploy`) |
+| Service Worker no funciona | Headers incorrectos | Verificar `_headers` incluye `Service-Worker-Allowed: /` |
+| PWA no se instala | manifest.json incorrecto | Verificar manifest.json tiene `start_url: "/"` |
+| Rutas SPA retornan 404 | SPA routing incorrecto | Verificar `_redirects` redirige todas rutas a `/index.html` |
 
 ---
 
@@ -237,11 +250,17 @@ Aplica a:
 
 | Fecha | Cambio | Rama |
 |-------|--------|------|
-| 2026-05-22 | Eliminar wrangler.toml (Cloudflare Pages, no Workers) | main |
-| 2026-05-22 | Simplificar documentación (PROJECTS.md creado) | main |
-| 2026-05-22 | Email centralizado en Code.gs línea 8 | main |
-| 2026-05-22 | UI con Tailwind CSS + PWA instalable | main |
-| 2026-05-15 | Inicial: GitHub + Cloudflare Pages setup | main |
+| 2026-05-22 | Mejorar _worker.js (import al inicio, better error handling) | main |
+| 2026-05-22 | Mejorar wrangler.toml (documentación clara, staging env) | main |
+| 2026-05-22 | Mejorar package.json (scripts útiles, descripción actualizada) | main |
+| 2026-05-22 | Mejorar _headers (HSTS, Service-Worker-Allowed, comentarios) | main |
+| 2026-05-22 | Mejorar _redirects (documentación de SPA routing) | main |
+| 2026-05-22 | Actualizar CLOUDFLARE_SETUP.md (arquitectura Hybrid Mode) | main |
+| 2026-05-22 | Actualizar PROJECTS.md (Workers, no Pages; Supabase principal) | main |
+| 2026-05-22 | Integración Supabase PostgreSQL (migración de Sheets) | main |
+| 2026-05-22 | Google Apps Script webhooks para sincronización | main |
+| 2026-05-15 | UI con Tailwind CSS + PWA instalable | main |
+| 2026-05-15 | Inicial: GitHub + Cloudflare Workers setup | main |
 
 ---
 
@@ -256,13 +275,17 @@ Aplica a:
 ## ✅ Estado Actual
 
 ```
-✅ App en vivo (HTTPS)
+✅ App en vivo (HTTPS) - Cloudflare Workers
 ✅ PWA instalable (iOS/Android)
-✅ Sincronización con Google Sheets
-✅ Notificaciones por email
-✅ Funciona offline
+✅ Supabase PostgreSQL (datos principal)
+✅ Sincronización con Google Calendar
+✅ Notificaciones por email (Google Apps Script)
+✅ Funciona offline (Service Worker)
 ✅ Compartible en RRSS
+✅ SPA routing robusto
+✅ Health check endpoint (/api/health)
+✅ Arquitectura documentada (Hybrid Mode)
 ⏳ Dashboard admin (futuro)
 ⏳ Multi-usuario (futuro)
-⏳ Integración Google Calendar (futuro)
+⏳ Autenticación en rutas /admin/ (futuro)
 ```

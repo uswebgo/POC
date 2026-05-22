@@ -1,7 +1,7 @@
 {
   "name": "agenda-inteligente",
   "version": "2.0.0",
-  "description": "PWA inteligente de planificación con Google Sheets y notificaciones automáticas",
+  "description": "PWA inteligente con Cloudflare Workers + Supabase + Google Apps Script",
   "author": "uswebgo",
   "license": "MIT",
   "private": true,
@@ -11,13 +11,24 @@
     "url": "https://github.com/uswebgo/agenda-inteligente.git"
   },
   "scripts": {
+    "dev": "wrangler dev --local",
     "deploy": "wrangler deploy",
-    "dev": "wrangler dev",
-    "install": "pnpm install"
+    "deploy:preview": "wrangler deploy --env staging",
+    "build": "echo 'Static site - no build needed'",
+    "test": "echo 'Add tests here'",
+    "serve": "python -m http.server 8000"
   },
   "devDependencies": {
     "@cloudflare/kv-asset-handler": "^0.3.0",
     "wrangler": "^4.93.1"
   },
-  "keywords": ["agenda", "pwa", "google-sheets", "calendario", "cloudflare-workers"]
+  "keywords": [
+    "agenda",
+    "pwa",
+    "supabase",
+    "cloudflare-workers",
+    "google-apps-script",
+    "notificaciones",
+    "calendario"
+  ]
 }

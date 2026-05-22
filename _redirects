@@ -1,3 +1,14 @@
-# Simple SPA routing para Cloudflare Workers
-# El Worker (_worker.js) maneja todo
-# Este archivo solo es necesario si usaras Cloudflare Pages puro
+# SPA (Single Page Application) Routing
+# Redirige todas las rutas sin extensión de archivo a index.html
+# Permite que el router del cliente (JavaScript) maneje la navegación
+#
+# Ejemplos:
+# /events → /index.html (maneja el router en JS)
+# /settings → /index.html (maneja el router en JS)
+# /index.html → /index.html (archivo directo)
+# /manifest.json → /manifest.json (archivo directo)
+# /api/* → /api/* (pasar a través, no existirán localmente)
+#
+# El Worker (_worker.js) también maneja esto con fallback a index.html
+
+/*  /index.html  200
