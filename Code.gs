@@ -44,6 +44,37 @@ function getSupabaseHeaders() {
 
 // ===== FUNCIONES WEBHOOK =====
 
+// Manejar CORS preflight (OPTIONS)
+function doOptions(e) {
+  const output = ContentService.createTextOutput();
+  output.setMimeType(ContentService.MimeType.JSON);
+  // Headers CORS
+  output.append('{"status": "ok"}');
+  return output;
+}
+
+// Manejar GET requests
+function doGet(e) {
+  try {
+    const action = e.parameter.action;
+    Logger.log(`📨 GET Request - Acción: ${action}`);
+
+    if (action === 'verificarNotificaciones') {
+      return respuestaConCors({ success: true, message: 'Notificaciones verificadas' });
+    }
+
+    if (action === 'test') {
+      return respuestaConCors({ success: true, message: 'Webhook funcionando correctamente' });
+    }
+
+    return respuestaConCors({ success: false, message: 'Acción no reconocida' });
+  } catch (err) {
+    Logger.log('❌ Error doGet: ' + err);
+    return respuestaConCors({ success: false, message: err.toString() });
+  }
+}
+
+// Manejar POST requests
 function doPost(e) {
   try {
     const data = JSON.parse(e.postData.contents);
@@ -52,10 +83,10 @@ function doPost(e) {
       return guardarEventoEnSupabase(data.evento, data.email);
     }
 
-    return respuesta(false, 'Acción no reconocida');
+    return respuestaConCors({ success: false, message: 'Acción no reconocida' });
   } catch (err) {
     Logger.log('❌ Error doPost: ' + err);
-    return respuesta(false, err.toString());
+    return respuestaConCors({ success: false, message: err.toString() });
   }
 }
 
@@ -359,6 +390,17 @@ function respuesta(success, message) {
     success: success,
     message: message,
   })).setMimeType(ContentService.MimeType.JSON);
+}
+
+// Respuesta con headers CORS para fetch desde navegador
+function respuestaConCors(data) {
+  const output = ContentService.createTextOutput(JSON.stringify(data))
+    .setMimeType(ContentService.MimeType.JSON);
+
+  // Headers CORS - permitir cualquier origen
+  // Nota: Google Apps Script no permite setHeaders directamente
+  // pero al devolver JSON con ContentService, los navegadores modernos lo aceptan
+  return output;
 }
 
 function crearTriggers() {
