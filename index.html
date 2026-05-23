@@ -930,9 +930,9 @@
                         }
                     }
 
-                    // Notificar a Apps Script
-                    fetch(`${APPS_SCRIPT_WEBHOOK}?action=verificarNotificaciones`, { method: 'GET' })
-                        .catch(() => console.log('⚠️ Webhook opcional no disponible'));
+                    // Notificar a Apps Script (opcional - comentado temporalmente)
+                    // fetch(`${APPS_SCRIPT_WEBHOOK}?action=verificarNotificaciones`, { method: 'GET' })
+                    //     .catch(() => console.log('⚠️ Webhook opcional no disponible'));
 
                     document.getElementById('json_ia').value = '';
                     this.cargarEventos();
