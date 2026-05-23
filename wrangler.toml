@@ -8,49 +8,10 @@ main = "_worker.js"
 compatibility_date = "2026-05-22"
 compatibility_flags = ["nodejs_compat"]
 
-# ===== VARIABLES DE ENTORNO =====
-[env.production]
-name = "agenda-inteligente-production"
-vars = { APPS_SCRIPT_WEBHOOK = "https://script.google.com/macros/s/AKfycbxZXQCHa_1lp8qWuGQz2TqrbTDIglzAwI5mRyDEqMhferywLjwTkY-RB43FLLpdYIHDBA/exec" }
-
-# Staging environment (opcional, para testing antes de deploy)
-[env.staging]
-name = "agenda-inteligente-staging"
-vars = { APPS_SCRIPT_WEBHOOK = "https://script.google.com/macros/s/AKfycbxZXQCHa_1lp8qWuGQz2TqrbTDIglzAwI5mRyDEqMhferywLjwTkY-RB43FLLpdYIHDBA/exec" }
-
 # ===== CONFIGURACIÓN DE ASSETS ESTÁTICOS =====
 # El Worker sirve archivos estáticos desde el directorio actual
-# usando @cloudflare/kv-asset-handler
+# Nota: Cloudflare excluye automáticamente archivos ocultos (.git, .env, etc)
 
 [assets]
 directory = "."
 binding = "ASSETS"
-
-# Archivos que se incluyen en el build
-# IMPORTANTE: Todos los archivos necesarios para la PWA están aquí
-include = [
-  "index.html",
-  "manifest.json",
-  "sw.js",
-  "_headers",
-  "_redirects",
-  "*.css",
-  "*.js",
-  "*.json"
-]
-
-# Archivos que se EXCLUYEN del build (no se suben a Cloudflare)
-exclude = [
-  ".git",
-  ".github",
-  ".claude",
-  "node_modules",
-  ".wrangler",
-  "dist",
-  "build",
-  "*.md",
-  "*.gs",
-  ".env*",
-  ".*",
-  "deploy.bat"
-]
