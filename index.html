@@ -378,6 +378,13 @@
             <button onclick="app.importarJSON()" class="w-full bg-amber-500 text-white font-bold py-2 rounded-lg hover:bg-amber-600 transition-all">📥 Importar JSON</button>
         </div>
 
+        <!-- Botón Toggle Modo Selección -->
+        <div class="mb-4 flex gap-2">
+            <button id="btn-toggle-seleccion" onclick="modoSeleccion = !modoSeleccion; app.renderizar();" class="flex-1 px-4 py-2 bg-green-500 text-white font-bold rounded-lg hover:bg-green-600 transition-all text-sm">
+                ☐ Activar Selección Múltiple
+            </button>
+        </div>
+
         <!-- Lista de Eventos -->
         <div id="lista-eventos" class="space-y-3">
             <div class="text-center py-8 text-gray-500">
@@ -601,6 +608,20 @@
             },
 
             renderizar() {
+                // Actualizar botón de toggle del modo selección
+                const btnToggle = document.getElementById('btn-toggle-seleccion');
+                if(btnToggle) {
+                    if(modoSeleccion) {
+                        btnToggle.classList.remove('bg-green-500', 'hover:bg-green-600');
+                        btnToggle.classList.add('bg-red-500', 'hover:bg-red-600');
+                        btnToggle.innerHTML = '☑️ Desactivar Selección Múltiple';
+                    } else {
+                        btnToggle.classList.remove('bg-red-500', 'hover:bg-red-600');
+                        btnToggle.classList.add('bg-green-500', 'hover:bg-green-600');
+                        btnToggle.innerHTML = '☐ Activar Selección Múltiple';
+                    }
+                }
+
                 const ahora = new Date();
                 const hoy = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate());
                 const finSemana = new Date(hoy.getTime() + 7 * 24 * 60 * 60 * 1000);
@@ -667,10 +688,7 @@
                                     ${modoSeleccion ? `<input type="checkbox" ${isSelected ? 'checked' : ''} onchange="app.toggleSeleccion('${e.id}')" onclick="event.stopPropagation()" style="cursor: pointer; width: 20px; height: 20px;">` : ''}
                                     <h3 class="font-bold text-gray-900 text-base">${e.titulo}</h3>
                                 </div>
-                                <div class="flex gap-2">
-                                    <button onclick="event.stopPropagation(); modoSeleccion = !modoSeleccion; app.renderizar();" class="text-green-500 hover:text-green-700 flex-shrink-0 text-lg">${modoSeleccion ? '✓' : '✓'}</button>
-                                    <button onclick="event.stopPropagation(); app.editar('${e.id}')" class="text-blue-500 hover:text-blue-700 flex-shrink-0 ml-2">✏️</button>
-                                </div>
+                                ${!modoSeleccion ? `<button onclick="event.stopPropagation(); app.editar('${e.id}')" class="text-blue-500 hover:text-blue-700 flex-shrink-0 ml-2">✏️</button>` : ''}
                             </div>
 
                             <div class="event-details mt-3 pt-3 border-t border-gray-200">
