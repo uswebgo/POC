@@ -903,7 +903,12 @@
                         .replace(/^```json\n?/, '')   // ```json al inicio
                         .replace(/^```\n?/, '')       // ``` al inicio
                         .replace(/\n?```$/, '')       // ``` al final
-                        .trim();
+                        .trim()
+                        // Convertir comillas inteligentes a comillas normales
+                        .replace(/[""]/g, '"')  // " y " → "
+                        .replace(/['']/g, "'")  // ' y ' → '
+                        // Limpiar espacios especiales
+                        .replace(/[  -​  　]/g, ' ');
 
                     console.log('JSON a parsear:', cleanText); // Debug
                     console.log('Primer carácter código:', cleanText.charCodeAt(0)); // Debug
