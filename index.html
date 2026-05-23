@@ -896,14 +896,17 @@
                 const text = document.getElementById('json_ia').value.trim();
                 if(!text) return this.showToast('Pega JSON', 'error');
                 try {
-                    // Limpiar markdown si existe
+                    // Limpiar BOM y caracteres ocultos
                     let cleanText = text
-                        .replace(/^```json\n?/, '') // ```json al inicio
+                        .replace(/^﻿/, '')       // BOM UTF-8
+                        .replace(/^[\s\n\r]+/, '')    // Espacios/saltos al inicio
+                        .replace(/^```json\n?/, '')   // ```json al inicio
                         .replace(/^```\n?/, '')       // ``` al inicio
                         .replace(/\n?```$/, '')       // ``` al final
                         .trim();
 
                     console.log('JSON a parsear:', cleanText); // Debug
+                    console.log('Primer carácter código:', cleanText.charCodeAt(0)); // Debug
 
                     const data = JSON.parse(cleanText);
 
