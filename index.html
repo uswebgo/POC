@@ -896,8 +896,20 @@
                 const text = document.getElementById('json_ia').value.trim();
                 if(!text) return this.showToast('Pega JSON', 'error');
                 try {
-                    const data = JSON.parse(text.replace(/^```json/, '').replace(/^```/, '').replace(/```$/, '').trim());
-                    if(!Array.isArray(data)) throw new Error("Debe ser un array");
+                    // Limpiar markdown si existe
+                    let cleanText = text
+                        .replace(/^```json\n?/, '') // ```json al inicio
+                        .replace(/^```\n?/, '')       // ``` al inicio
+                        .replace(/\n?```$/, '')       // ``` al final
+                        .trim();
+
+                    console.log('JSON a parsear:', cleanText); // Debug
+
+                    const data = JSON.parse(cleanText);
+
+                    if(!Array.isArray(data)) throw new Error("Debe ser un array de eventos");
+
+                    let importados = 0;
                     for(const item of data) {
                         if(item.titulo && item.categoria && item.fecha) {
                             const d = new Date(item.fecha);
@@ -910,6 +922,7 @@
                                     email_usuario: EMAIL,
                                     duracion_minutos: item.duracion_minutos || null
                                 }]);
+                                importados++;
                             }
                         }
                     }
@@ -920,9 +933,10 @@
 
                     document.getElementById('json_ia').value = '';
                     this.cargarEventos();
-                    this.showToast(`✅ ${data.length} evento(s) importado(s)`);
+                    this.showToast(`✅ ${importados} evento(s) importado(s) correctamente`, 'success');
                 } catch(err) {
-                    alert('❌ Error JSON: ' + err.message);
+                    console.error('Error importación:', err);
+                    this.showToast(`❌ Error: ${err.message}`, 'error');
                 }
             },
 
