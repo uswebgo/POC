@@ -11,12 +11,12 @@ compatibility_flags = ["nodejs_compat"]
 # ===== VARIABLES DE ENTORNO =====
 [env.production]
 name = "agenda-inteligente-production"
-vars = { APPS_SCRIPT_WEBHOOK = "https://script.google.com/macros/s/AKfycbzC-Nc-B2zFTjcAl63ZMgX0i2EskdwxNBIW8B0Nc_MyJvYd_dqhcDe88rGvk__yOceIxg/exec" }
+vars = { APPS_SCRIPT_WEBHOOK = "https://script.google.com/macros/s/AKfycbxZXQCHa_1lp8qWuGQz2TqrbTDIglzAwI5mRyDEqMhferywLjwTkY-RB43FLLpdYIHDBA/exec" }
 
 # Staging environment (opcional, para testing antes de deploy)
 [env.staging]
 name = "agenda-inteligente-staging"
-vars = { APPS_SCRIPT_WEBHOOK = "https://script.google.com/macros/s/AKfycbzC-Nc-B2zFTjcAl63ZMgX0i2EskdwxNBIW8B0Nc_MyJvYd_dqhcDe88rGvk__yOceIxg/exec" }
+vars = { APPS_SCRIPT_WEBHOOK = "https://script.google.com/macros/s/AKfycbxZXQCHa_1lp8qWuGQz2TqrbTDIglzAwI5mRyDEqMhferywLjwTkY-RB43FLLpdYIHDBA/exec" }
 
 # ===== CONFIGURACIÓN DE ASSETS ESTÁTICOS =====
 # El Worker sirve archivos estáticos desde el directorio actual
