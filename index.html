@@ -359,11 +359,15 @@
                     </div>
                     <div class="p-4">
                         <p class="text-sm text-gray-600 mb-3">Copia este prompt y pégalo en ChatGPT o Claude:</p>
-                        <textarea id="prompt-ia" readonly class="w-full px-4 py-3 bg-gray-50 border-2 border-amber-200 rounded-lg text-xs font-mono text-gray-700 resize-none mb-3" rows="6">Genera JSON con eventos en este formato exacto: [{"titulo":"...","categoria":"Laboral|Colegio|Cumpleaños|Personal|Karate|Medicinas|Horas Medicas|Ejercicio","fecha":"YYYY-MM-DDTHH:MM:SS","duracion_minutos":480,"notas":"..."}].
+                        <textarea id="prompt-ia" readonly class="w-full px-4 py-3 bg-gray-50 border-2 border-amber-200 rounded-lg text-xs font-mono text-gray-700 resize-none mb-3" rows="6">Genera JSON con eventos en este formato exacto: [{"titulo":"Turno Santander","categoria":"Laboral|Colegio|Cumpleaños|Personal|Karate|Medicinas|Horas Medicas|Ejercicio","fecha":"YYYY-MM-DDTHH:MM:SS","duracion_minutos":480,"notas":"..."}].
+- El título de la jornada laboral SIEMPRE es "Turno Santander" (no "Turno On Queue")
 - Fecha en ISO 8601 local (sin Z)
 - duracion_minutos: duración en minutos (ej: 480 para 8 horas)
 - Solo válido JSON, sin markdown</textarea>
-                        <button onclick="app.copiarPrompt()" class="w-full bg-amber-600 text-white font-bold py-2 rounded-lg hover:bg-amber-700 transition-all mb-3">📋 Copiar Prompt</button>
+                        <div class="flex gap-2 mb-3">
+                            <button onclick="app.copiarPrompt()" class="flex-1 bg-amber-600 text-white font-bold py-2 rounded-lg hover:bg-amber-700 transition-all">📋 Copiar Prompt</button>
+                            <button onclick="app.abrirChatGPT()" class="flex-1 bg-green-600 text-white font-bold py-2 rounded-lg hover:bg-green-700 transition-all">🤖 ChatGPT</button>
+                        </div>
                         <p class="text-xs text-gray-500">Luego pega la respuesta JSON abajo y haz click en Importar</p>
                     </div>
                 </div>
@@ -446,8 +450,24 @@
             </div>
             <div class="p-4">
                 <div id="lista-categorias" class="space-y-3 mb-4"></div>
+
+                <!-- Categorías Predefinidas -->
+                <div class="mb-4 pb-4 border-b border-gray-200">
+                    <h3 class="font-bold text-gray-900 mb-3">➕ Categorías Predefinidas</h3>
+                    <div class="grid grid-cols-4 gap-2">
+                        <button onclick="app.agregarCategoriaPredefinida('Laboral', '💼', '#dc2626')" class="p-3 bg-gray-100 hover:bg-gray-200 rounded-lg text-center font-bold transition-all">💼<br><span class="text-xs">Laboral</span></button>
+                        <button onclick="app.agregarCategoriaPredefinida('Colegio', '🏫', '#2563eb')" class="p-3 bg-gray-100 hover:bg-gray-200 rounded-lg text-center font-bold transition-all">🏫<br><span class="text-xs">Colegio</span></button>
+                        <button onclick="app.agregarCategoriaPredefinida('Cumpleaños', '🎂', '#f59e0b')" class="p-3 bg-gray-100 hover:bg-gray-200 rounded-lg text-center font-bold transition-all">🎂<br><span class="text-xs">Cumple</span></button>
+                        <button onclick="app.agregarCategoriaPredefinida('Personal', '🏠', '#8b5cf6')" class="p-3 bg-gray-100 hover:bg-gray-200 rounded-lg text-center font-bold transition-all">🏠<br><span class="text-xs">Personal</span></button>
+                        <button onclick="app.agregarCategoriaPredefinida('Karate', '🥋', '#ec4899')" class="p-3 bg-gray-100 hover:bg-gray-200 rounded-lg text-center font-bold transition-all">🥋<br><span class="text-xs">Karate</span></button>
+                        <button onclick="app.agregarCategoriaPredefinida('Medicinas', '💊', '#14b8a6')" class="p-3 bg-gray-100 hover:bg-gray-200 rounded-lg text-center font-bold transition-all">💊<br><span class="text-xs">Medicinas</span></button>
+                        <button onclick="app.agregarCategoriaPredefinida('Horas Medicas', '⚕️', '#06b6d4')" class="p-3 bg-gray-100 hover:bg-gray-200 rounded-lg text-center font-bold transition-all">⚕️<br><span class="text-xs">Médico</span></button>
+                        <button onclick="app.agregarCategoriaPredefinida('Ejercicio', '💪', '#10b981')" class="p-3 bg-gray-100 hover:bg-gray-200 rounded-lg text-center font-bold transition-all">💪<br><span class="text-xs">Ejercicio</span></button>
+                    </div>
+                </div>
+
                 <form id="form-categoria" class="space-y-3 border-t pt-4">
-                    <h3 class="font-bold text-gray-900">➕ Nueva Categoría</h3>
+                    <h3 class="font-bold text-gray-900">➕ Agregar Personalizada</h3>
                     <input type="text" id="cat-nombre" placeholder="Nombre" class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500" required>
                     <div class="grid grid-cols-2 gap-3">
                         <div>
@@ -482,6 +502,8 @@
         let categoria = 'todo';
         let deferredPrompt = null;
         let expandedEventId = null;
+        let eventosSeleccionados = new Set(); // Para multi-selección
+        let modoSeleccion = false; // Toggle para habilitar selección múltiple
 
         // ===== APP OBJECT =====
         window.app = {
@@ -607,7 +629,22 @@
                     return;
                 }
 
-                container.innerHTML = filtrados.map(e => {
+                // Agregar botones de control si hay eventos seleccionados
+                let html = '';
+                if(eventosSeleccionados.size > 0) {
+                    html += `
+                        <div class="sticky top-0 bg-blue-50 border-b-2 border-blue-300 p-3 mb-3 rounded-lg flex justify-between items-center">
+                            <span class="font-bold text-blue-900">${eventosSeleccionados.size} evento(s) seleccionado(s)</span>
+                            <div class="flex gap-2">
+                                <button onclick="app.editarMultiples()" class="px-3 py-1 bg-blue-500 text-white text-xs font-bold rounded hover:bg-blue-600">✏️ Editar</button>
+                                <button onclick="app.borrarMultiples()" class="px-3 py-1 bg-red-500 text-white text-xs font-bold rounded hover:bg-red-600">🗑️ Eliminar</button>
+                                <button onclick="app.limpiarSeleccion()" class="px-3 py-1 bg-gray-400 text-white text-xs font-bold rounded hover:bg-gray-500">✕ Cancelar</button>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                html += filtrados.map(e => {
                     const cat = categorias.find(c => c.nombre === e.categoria) || {};
                     const fecha = new Date(e.fecha);
                     const hora = fecha.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
@@ -621,14 +658,19 @@
                     }
 
                     const isExpanded = expandedEventId === e.id;
+                    const isSelected = eventosSeleccionados.has(e.id);
 
                     return `
-                        <div class="event-card ${isExpanded ? 'expanded' : 'collapsed'}" style="border-left-color: ${cat.color || '#3b82f6'}" onclick="app.toggleExpand('${e.id}')">
+                        <div class="event-card ${isExpanded ? 'expanded' : 'collapsed'} ${isSelected ? 'bg-blue-100 border-2 border-blue-500' : ''}" style="border-left-color: ${cat.color || '#3b82f6'}" ${modoSeleccion ? `onclick="event.stopPropagation(); app.toggleSeleccion('${e.id}')"` : `onclick="app.toggleExpand('${e.id}')"` }>
                             <div class="flex justify-between items-start">
-                                <div class="flex-1">
+                                <div class="flex items-center gap-3 flex-1">
+                                    ${modoSeleccion ? `<input type="checkbox" ${isSelected ? 'checked' : ''} onchange="app.toggleSeleccion('${e.id}')" onclick="event.stopPropagation()" style="cursor: pointer; width: 20px; height: 20px;">` : ''}
                                     <h3 class="font-bold text-gray-900 text-base">${e.titulo}</h3>
                                 </div>
-                                <button onclick="event.stopPropagation(); app.editar('${e.id}')" class="text-blue-500 hover:text-blue-700 flex-shrink-0 ml-2">✏️</button>
+                                <div class="flex gap-2">
+                                    <button onclick="event.stopPropagation(); modoSeleccion = !modoSeleccion; app.renderizar();" class="text-green-500 hover:text-green-700 flex-shrink-0 text-lg">${modoSeleccion ? '✓' : '✓'}</button>
+                                    <button onclick="event.stopPropagation(); app.editar('${e.id}')" class="text-blue-500 hover:text-blue-700 flex-shrink-0 ml-2">✏️</button>
+                                </div>
                             </div>
 
                             <div class="event-details mt-3 pt-3 border-t border-gray-200">
@@ -645,11 +687,75 @@
                         </div>
                     `;
                 }).join('');
+
+                container.innerHTML = html;
             },
 
             toggleExpand(id) {
                 expandedEventId = expandedEventId === id ? null : id;
                 this.renderizar();
+            },
+
+            toggleSeleccion(id) {
+                if(eventosSeleccionados.has(id)) {
+                    eventosSeleccionados.delete(id);
+                } else {
+                    eventosSeleccionados.add(id);
+                }
+                this.renderizar();
+            },
+
+            limpiarSeleccion() {
+                eventosSeleccionados.clear();
+                modoSeleccion = false;
+                this.renderizar();
+            },
+
+            editarMultiples() {
+                if(eventosSeleccionados.size === 0) {
+                    this.showToast('Selecciona eventos primero', 'error');
+                    return;
+                }
+                // Usar el primer evento para editar y aplicar cambios a todos
+                const primerEvento = Array.from(eventosSeleccionados)[0];
+                const evento = eventos.find(e => e.id === primerEvento);
+                if(!evento) return;
+
+                document.getElementById('edit-id').value = JSON.stringify(Array.from(eventosSeleccionados));
+                document.getElementById('edit-titulo').value = evento.titulo;
+                document.getElementById('edit-categoria').value = evento.categoria;
+                document.getElementById('edit-fecha').value = evento.fecha.replace('Z', '').slice(0, 16);
+                document.getElementById('edit-notas').value = evento.notas || '';
+                document.getElementById('edit-duracion').value = evento.duracion_minutos || '';
+
+                // Cambiar botón de eliminar a "Eliminar Todos"
+                const btnEliminar = document.querySelector('#form-editar button[type="button"]');
+                if(btnEliminar) {
+                    btnEliminar.textContent = `🗑️ Eliminar ${eventosSeleccionados.size} eventos`;
+                }
+
+                this.abrirModal('modal-editar');
+            },
+
+            async borrarMultiples() {
+                if(eventosSeleccionados.size === 0) {
+                    this.showToast('Selecciona eventos primero', 'error');
+                    return;
+                }
+
+                if(!confirm(`¿Eliminar ${eventosSeleccionados.size} evento(s)? Esta acción no se puede deshacer.`)) return;
+
+                try {
+                    for(const id of eventosSeleccionados) {
+                        await client.from('eventos').delete().eq('id', id);
+                    }
+
+                    this.limpiarSeleccion();
+                    this.cargarEventos();
+                    this.showToast(`✅ ${eventosSeleccionados.size} evento(s) eliminado(s)`, 'success');
+                } catch(err) {
+                    this.showToast('❌ Error: ' + err.message, 'error');
+                }
             },
 
             async guardar(e) {
@@ -707,19 +813,33 @@
 
             async guardarEdicion(e) {
                 e.preventDefault();
-                const id = document.getElementById('edit-id').value;
+                const idValue = document.getElementById('edit-id').value;
                 const duracion = document.getElementById('edit-duracion').value;
+
+                // Verificar si es edición múltiple (JSON array) o individual
+                let ids = [];
                 try {
-                    await client.from('eventos').update({
-                        titulo: document.getElementById('edit-titulo').value,
-                        categoria: document.getElementById('edit-categoria').value,
-                        fecha: new Date(document.getElementById('edit-fecha').value).toISOString(),
-                        notas: document.getElementById('edit-notas').value || null,
-                        duracion_minutos: duracion ? parseInt(duracion) : null
-                    }).eq('id', id);
+                    ids = JSON.parse(idValue);
+                } catch {
+                    ids = [idValue]; // Es un ID simple
+                }
+
+                const updateData = {
+                    titulo: document.getElementById('edit-titulo').value,
+                    categoria: document.getElementById('edit-categoria').value,
+                    fecha: new Date(document.getElementById('edit-fecha').value).toISOString(),
+                    notas: document.getElementById('edit-notas').value || null,
+                    duracion_minutos: duracion ? parseInt(duracion) : null
+                };
+
+                try {
+                    for(const id of ids) {
+                        await client.from('eventos').update(updateData).eq('id', id);
+                    }
                     this.cerrarModal();
+                    this.limpiarSeleccion();
                     this.cargarEventos();
-                    this.showToast('✅ Evento actualizado', 'success');
+                    this.showToast(`✅ ${ids.length} evento(s) actualizado(s)`, 'success');
                 } catch(err) {
                     this.showToast('❌ Error: ' + err.message);
                 }
@@ -822,6 +942,28 @@
                 }
             },
 
+            async agregarCategoriaPredefinida(nombre, icono, color) {
+                try {
+                    // Verificar si ya existe
+                    const existe = categorias.find(c => c.nombre === nombre && c.email_usuario === EMAIL);
+                    if(existe) {
+                        this.showToast(`✅ Categoría "${nombre}" ya existe`, 'info');
+                        return;
+                    }
+
+                    await client.from('categorias').insert([{
+                        email_usuario: EMAIL,
+                        nombre: nombre,
+                        color: color,
+                        icono: icono
+                    }]);
+                    this.cargarCategorias();
+                    this.showToast(`✅ Categoría "${nombre}" agregada`, 'success');
+                } catch(err) {
+                    this.showToast('❌ Error: ' + err.message);
+                }
+            },
+
             async eliminarCategoria(nombre) {
                 if(!confirm(`¿Eliminar categoría "${nombre}"?`)) return;
                 try {
@@ -871,6 +1013,25 @@
                     this.showToast('✅ Prompt copiado al portapapeles');
                 }).catch(() => {
                     this.showToast('❌ No se pudo copiar', 'error');
+                });
+            },
+
+            abrirChatGPT() {
+                const prompt = document.getElementById('prompt-ia').value;
+                navigator.clipboard.writeText(prompt).then(() => {
+                    // Deep link para ChatGPT (abre la app si está instalada)
+                    const chatgptUrl = 'https://chat.openai.com';
+                    // Primero intenta abrir la app nativa si existe
+                    window.location.href = 'chatgpt://';
+                    // Si después de 1s sigue en la app, no abre el navegador
+                    setTimeout(() => {
+                        if(document.visibilityState === 'visible') {
+                            window.open(chatgptUrl, '_blank');
+                        }
+                    }, 1000);
+                    this.showToast('✅ Prompt copiado - Abriendo ChatGPT...');
+                }).catch(() => {
+                    this.showToast('❌ Error al copiar', 'error');
                 });
             }
         };
