@@ -681,8 +681,12 @@
                     const isExpanded = expandedEventId === e.id;
                     const isSelected = eventosSeleccionados.has(e.id);
 
+                    const onClickHandler = modoSeleccion
+                        ? `onclick="event.stopPropagation(); app.toggleSeleccion('${e.id}')"`
+                        : `onclick="app.toggleExpand('${e.id}')"`;
+
                     return `
-                        <div class="event-card ${isExpanded ? 'expanded' : 'collapsed'} ${isSelected ? 'bg-blue-100 border-2 border-blue-500' : ''}" style="border-left-color: ${cat.color || '#3b82f6'}" ${modoSeleccion ? `onclick="event.stopPropagation(); app.toggleSeleccion('${e.id}')"` : `onclick="app.toggleExpand('${e.id}')"` }>
+                        <div class="event-card ${isExpanded ? 'expanded' : 'collapsed'} ${isSelected ? 'bg-blue-100 border-2 border-blue-500' : ''}" style="border-left-color: ${cat.color || '#3b82f6'}" ${onClickHandler}>
                             <div class="flex justify-between items-start">
                                 <div class="flex items-center gap-3 flex-1">
                                     ${modoSeleccion ? `<input type="checkbox" ${isSelected ? 'checked' : ''} onchange="app.toggleSeleccion('${e.id}')" onclick="event.stopPropagation()" style="cursor: pointer; width: 20px; height: 20px;">` : ''}
