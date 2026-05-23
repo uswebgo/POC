@@ -913,6 +913,16 @@
                     console.log('JSON a parsear:', cleanText); // Debug
                     console.log('Primer carácter código:', cleanText.charCodeAt(0)); // Debug
 
+                    // Debug: Mostrar primeros 50 caracteres con códigos
+                    console.log('Primeros 50 caracteres:');
+                    for(let i = 0; i < Math.min(50, cleanText.length); i++) {
+                        const char = cleanText[i];
+                        const code = cleanText.charCodeAt(i);
+                        if(code < 32 || code > 126) {
+                            console.log(`[${i}] ESPECIAL: código ${code}`);
+                        }
+                    }
+
                     const data = JSON.parse(cleanText);
 
                     if(!Array.isArray(data)) throw new Error("Debe ser un array de eventos");
