@@ -905,10 +905,7 @@
                         else if(code === 160) cleanText += ' '; // nbsp → space
                         else cleanText += text[i];
                     }
-                    cleanText = cleanText.replace(/^```json
-?/, '').replace(/^```
-?/, '').replace(/
-?```$/, '').trim();
+                    cleanText = cleanText.replace(/^```json\n?/, '').replace(/^```\n?/, '').replace(/\n?```$/, '').trim();
 
                     console.log('JSON a parsear:', cleanText);
                     const data = JSON.parse(cleanText);
