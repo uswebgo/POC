@@ -907,8 +907,8 @@
                     }
                     cleanText = cleanText.replace(/^```json\n?/, '').replace(/^```\n?/, '').replace(/\n?```$/, '').trim();
 
-                    console.log('JSON a parsear:', cleanText);
                     const data = JSON.parse(cleanText);
+                    console.log(`✅ JSON válido - ${data.length} evento(s) detectado(s)`);
 
                     if(!Array.isArray(data)) throw new Error("Debe ser un array de eventos");
 
