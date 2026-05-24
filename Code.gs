@@ -6,12 +6,12 @@
 
 // ===== CONSTANTES GLOBALES =====
 const CONFIG = {
-  // Supabase
-  SUPABASE_URL: 'https://ufwzavtzbmvieptszehd.supabase.co',
-  SUPABASE_SERVICE_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVmd3phdnR6Ym12aWVwdHN6ZWhkIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTQyNTQ5MCwiZXhwIjoyMDk1MDAxNDkwfQ.idsAKaZC1rzIyWrZe-dePsTA1u-D6HhfVfiT1o5PYYnY',
+  // Supabase POC
+  SUPABASE_URL: 'https://wzvdjdomystzltpwycnm.supabase.co',
+  SUPABASE_SERVICE_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6dmRqZG9teXN0emx0cHd5Y25tIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTU4NTA5OCwiZXhwIjoyMDk1MTYxMDk4fQ.Morn6ztlRc8goZuM48bMKZDElkmtWGTzj0ms0yrPR4g',
 
-  // Email
-  EMAIL_DESTINO: 'j.castillo.bozo@gmail.com',
+  // Email (será dinámico por usuario autenticado)
+  EMAIL_DESTINO: 'noreply@agenda-poc.app',
   EMAIL_REMITENTE: 'noreply@agenda-inteligente.app',
   MARGEN_NOTIFICACION: 15, // minutos antes
 
