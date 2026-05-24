@@ -365,18 +365,6 @@
                 </button>
             </div>
             
-            <!-- Bypass de Simulación para el POC -->
-            <div class="space-y-3 pt-4 border-t border-white/5">
-                <div class="text-[10px] text-slate-500 uppercase tracking-widest font-bold mb-2">Simulador rápido (Prueba de Concepto)</div>
-                
-                <form id="form-login-simulado" class="space-y-3">
-                    <input type="email" id="login-email-input" value="j.castillo.bozo@gmail.com" placeholder="tu.correo@gmail.com" class="w-full px-4 py-3 bg-slate-950/60 border border-white/10 text-white placeholder-slate-600 rounded-xl text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all text-center font-medium outline-none">
-                    <button type="submit" class="w-full bg-blue-600/10 border border-blue-500/20 text-blue-400 font-bold py-3 rounded-xl hover:bg-blue-600/20 hover:border-blue-500/30 transition-all duration-200 text-sm flex items-center justify-center gap-2">
-                        <span>🚀</span>
-                        <span>Acceso Rápido del POC</span>
-                    </button>
-                </form>
-            </div>
             
             <div class="mt-8 text-[10px] text-slate-600">
                 Supabase Auth Google Gateway • POC Mode Active
@@ -386,11 +374,6 @@
 
     <!-- ================= APP MAIN LAYOUT (Dashboard) ================= -->
     <div id="app-layout" class="hidden relative z-10">
-        <!-- Banner de Simulación POC -->
-        <div id="simulacion-banner" class="hidden bg-amber-500/10 border-b border-amber-500/20 text-amber-400 text-center py-1.5 px-4 text-xs font-semibold">
-            ⚠️ Modo Simulación Activo (Para usar RLS seguro, inicia sesión con Google real)
-        </div>
-
         <!-- Header -->
         <header class="sticky top-0 bg-[#080a0f]/80 backdrop-blur-md border-b border-white/5 z-30 transition-all">
             <div class="max-w-2xl mx-auto px-4 py-3">
@@ -418,6 +401,10 @@
                             <img id="header-user-avatar" src="https://lh3.googleusercontent.com/d/1eQJlngZSouUJxarOvjBuB0ZuwN66jrPR" class="w-9 h-9 rounded-xl border border-white/20 shadow-[0_0_15px_rgba(59,130,246,0.2)] object-cover group-hover:border-blue-500 transition-colors">
                             <span class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 rounded-full border border-slate-900"></span>
                         </div>
+                        <button onclick="app.logout()" class="hidden sm:flex items-center gap-1.5 bg-red-600/10 border border-red-500/30 text-red-400 text-xs font-bold px-3 py-2 rounded-lg hover:bg-red-600/20 transition-all">
+                            🚪
+                            <span>Salir</span>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -733,7 +720,6 @@
         let EMAIL = '';
         let USER_NAME = '';
         let USER_PHOTO = '';
-        let ES_SIMULACION = false;
 
         // ===== APP LOGIC OBJECT =====
         window.app = {
@@ -760,71 +746,53 @@
             async checkSession() {
                 const loginScreen = document.getElementById('login-screen');
                 const appLayout = document.getElementById('app-layout');
-                const simBanner = document.getElementById('simulacion-banner');
-                
-                // 1. Verificar si hay sesión de Supabase Auth
+
+                // Verificar si hay sesión de Supabase Auth con Google
                 const { data: { session } } = await client.auth.getSession();
-                
+
                 if (session) {
                     // Hay una sesión real con Google en Supabase
-                    ES_SIMULACION = false;
                     const user = session.user;
                     EMAIL = user.email;
                     USER_NAME = user.user_metadata.full_name || user.email.split('@')[0].toUpperCase();
                     USER_PHOTO = user.user_metadata.avatar_url || '';
-                    
+
                     localStorage.setItem('USER_EMAIL', EMAIL);
                     localStorage.setItem('USER_NAME', USER_NAME);
                     localStorage.setItem('USER_PHOTO', USER_PHOTO);
-                } else {
-                    // 2. Si no hay sesión real, verificar si hay bypass de simulación activo
-                    const simEmail = localStorage.getItem('SIM_USER_EMAIL');
-                    if (simEmail) {
-                        ES_SIMULACION = true;
-                        EMAIL = simEmail;
-                        USER_NAME = localStorage.getItem('SIM_USER_NAME') || EMAIL.split('@')[0].toUpperCase();
-                        USER_PHOTO = localStorage.getItem('SIM_USER_PHOTO') || "https://lh3.googleusercontent.com/d/1eQJlngZSouUJxarOvjBuB0ZuwN66jrPR";
-                    } else {
-                        // Sin sesión ni simulación -> Mostrar pantalla de bienvenida
-                        EMAIL = '';
-                        appLayout.classList.add('hidden');
-                        loginScreen.classList.remove('hidden');
-                        return;
+
+                    // Mostrar la app
+                    loginScreen.classList.add('hidden');
+                    appLayout.classList.remove('hidden');
+
+                    // Actualizar elementos visuales del Header
+                    document.getElementById('header-user-name').textContent = USER_NAME;
+                    document.getElementById('header-user-email').textContent = EMAIL;
+                    if (USER_PHOTO) {
+                        document.getElementById('header-user-avatar').src = USER_PHOTO;
+                        document.getElementById('ajustes-user-avatar').src = USER_PHOTO;
                     }
-                }
 
-                // Si está autenticado (real o simulación):
-                loginScreen.classList.add('hidden');
-                appLayout.classList.remove('hidden');
-                
-                if (ES_SIMULACION) {
-                    simBanner.classList.remove('hidden');
+                    // Actualizar elementos del modal de Ajustes
+                    document.getElementById('ajustes-user-name').textContent = USER_NAME;
+                    document.getElementById('ajustes-user-email').textContent = EMAIL;
+                    document.getElementById('ajustes-user-status').textContent = 'Google Secure Session';
+                    document.getElementById('ajustes-user-status').className = 'inline-flex items-center gap-1 text-[9px] px-2 py-0.5 rounded-full font-bold mt-1 uppercase tracking-wider bg-emerald-500/10 text-emerald-400';
+
+                    // Rellenar entradas de Ajustes
+                    document.getElementById('config-supabase-url').value = SUPABASE_URL;
+                    document.getElementById('config-supabase-key').value = SUPABASE_KEY;
+                    document.getElementById('config-webhook').value = APPS_SCRIPT_WEBHOOK;
+
+                    // Cargar datos
+                    this.cargarCategorias();
+                    this.cargarEventos();
                 } else {
-                    simBanner.classList.add('hidden');
+                    // Sin sesión -> Mostrar pantalla de login
+                    EMAIL = '';
+                    appLayout.classList.add('hidden');
+                    loginScreen.classList.remove('hidden');
                 }
-
-                // Actualizar elementos visuales del Header
-                document.getElementById('header-user-name').textContent = USER_NAME;
-                document.getElementById('header-user-email').textContent = EMAIL;
-                if (USER_PHOTO) {
-                    document.getElementById('header-user-avatar').src = USER_PHOTO;
-                    document.getElementById('ajustes-user-avatar').src = USER_PHOTO;
-                }
-                
-                // Actualizar elementos del modal de Ajustes
-                document.getElementById('ajustes-user-name').textContent = USER_NAME;
-                document.getElementById('ajustes-user-email').textContent = EMAIL;
-                document.getElementById('ajustes-user-status').textContent = ES_SIMULACION ? 'Modo Simulación Activo' : 'Google Secure Session';
-                document.getElementById('ajustes-user-status').className = `inline-flex items-center gap-1 text-[9px] px-2 py-0.5 rounded-full font-bold mt-1 uppercase tracking-wider ${ES_SIMULACION ? 'bg-amber-500/10 text-amber-400' : 'bg-emerald-500/10 text-emerald-400'}`;
-
-                // Rellenar entradas de Ajustes
-                document.getElementById('config-supabase-url').value = SUPABASE_URL;
-                document.getElementById('config-supabase-key').value = SUPABASE_KEY;
-                document.getElementById('config-webhook').value = APPS_SCRIPT_WEBHOOK;
-
-                // Cargar datos
-                this.cargarCategorias();
-                this.cargarEventos();
             },
 
             // ===== INICIO DE SESIÓN CON GOOGLE (Supabase OAuth) =====
@@ -845,19 +813,13 @@
             // ===== CIERRE DE SESIÓN =====
             async logout() {
                 try {
-                    // Limpiar localstorage de simulación
-                    localStorage.removeItem('SIM_USER_EMAIL');
-                    localStorage.removeItem('SIM_USER_NAME');
-                    localStorage.removeItem('SIM_USER_PHOTO');
-
                     // Cerrar sesión en Supabase
                     await client.auth.signOut();
-                    
+
                     EMAIL = '';
                     USER_NAME = '';
                     USER_PHOTO = '';
-                    ES_SIMULACION = false;
-                    
+
                     this.cerrarModal();
                     this.showToast('🚪 Sesión finalizada', 'info');
                     this.checkSession();
@@ -893,20 +855,6 @@
                         periodo = e.target.dataset.period;
                         this.renderizar();
                     });
-                });
-
-                // Submit Formulario Login Simulado
-                document.getElementById('form-login-simulado').addEventListener('submit', (e) => {
-                    e.preventDefault();
-                    const simulatedEmail = document.getElementById('login-email-input').value.trim();
-                    if (simulatedEmail) {
-                        localStorage.setItem('SIM_USER_EMAIL', simulatedEmail);
-                        localStorage.setItem('SIM_USER_NAME', simulatedEmail.split('@')[0].toUpperCase());
-                        localStorage.setItem('SIM_USER_PHOTO', "https://lh3.googleusercontent.com/d/1eQJlngZSouUJxarOvjBuB0ZuwN66jrPR");
-                        
-                        this.showToast('🚀 Acceso Simulado del POC Exitoso', 'success');
-                        this.checkSession();
-                    }
                 });
 
                 // Formularios de Creación y Edición
