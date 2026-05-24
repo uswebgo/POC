@@ -88,6 +88,17 @@
             overflow-x: hidden;
         }
 
+        /* ===== ESTILOS ANTES QUE TAILWIND CARGUE ===== */
+        .nav-btn span {
+            display: block;
+            font-size: 1.125rem;
+            line-height: 1.5;
+        }
+
+        .nav-btn span:first-child {
+            font-size: 1.125rem; /* text-lg size */
+        }
+
         @media (max-width: 640px) {
             body {
                 font-size: 14px;
@@ -99,6 +110,14 @@
 
             .glass-card, .glass-panel {
                 border-radius: 12px;
+            }
+
+            .nav-btn span:first-child {
+                font-size: 1.125rem;
+            }
+
+            .nav-btn span:last-child {
+                font-size: 0.75rem;
             }
         }
 
@@ -1386,7 +1405,18 @@
             abrirChatGPT() {
                 const prompt = document.getElementById('prompt-ia').value;
                 navigator.clipboard.writeText(prompt).then(() => {
-                    window.open('https://chat.openai.com', '_blank');
+                    // Intentar abrir ChatGPT - en iOS intenta app, si no disponible va a web
+                    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+                    if (isIOS) {
+                        // Intentar protocolo de app de ChatGPT en iOS
+                        window.location.href = 'chatgpt://';
+                        // Si no funciona, abrir en navegador después de 1.5s
+                        setTimeout(() => {
+                            window.open('https://chat.openai.com', '_blank');
+                        }, 1500);
+                    } else {
+                        window.open('https://chat.openai.com', '_blank');
+                    }
                     this.showToast('🤖 Abriendo ChatGPT...');
                 }).catch(() => {
                     this.showToast('❌ Error al copiar', 'error');
@@ -1397,11 +1427,20 @@
                 if(deferredPrompt) {
                     deferredPrompt.prompt();
                     deferredPrompt.userChoice.then(({ outcome }) => {
-                        if(outcome === 'accepted') this.showToast('📥 ¡Gracias por instalar la app!', 'success');
+                        if(outcome === 'accepted') {
+                            this.showToast('📥 ¡Gracias por instalar la app!', 'success');
+                        } else {
+                            this.showToast('⏭️ Puedes instalar la app más tarde', 'info');
+                        }
                         deferredPrompt = null;
                     });
                 } else {
-                    this.showToast('💡 Abre el menú de tu navegador y selecciona "Instalar aplicación" o "Añadir a la pantalla de inicio"');
+                    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+                    if (isIOS) {
+                        this.showToast('💡 En Safari: Abre el menú (compartir) y selecciona "Añadir a la pantalla de inicio"');
+                    } else {
+                        this.showToast('💡 Abre el menú de tu navegador y selecciona "Instalar aplicación"');
+                    }
                 }
             },
 
@@ -1508,6 +1547,14 @@
 
             async actualizarEstadoAutorizacion() {
                 try {
+                    // Esperar a que el elemento exista (fix para Safari)
+                    let btnAutorizar = document.getElementById('btn-autorizar-calendar');
+                    if (!btnAutorizar) {
+                        console.log('Esperando a que se cargue el botón...');
+                        setTimeout(() => this.actualizarEstadoAutorizacion(), 200);
+                        return;
+                    }
+
                     const { data, error } = await client
                         .from('usuarios')
                         .select('calendar_autorizado')
@@ -1517,20 +1564,27 @@
                     // Si hay error 406 o 404 (usuario no existe aún), mostrar botón de autorización
                     if (error) {
                         console.log('Usuario aún sin autorización, mostrando botón');
-                        document.getElementById('btn-autorizar-calendar').classList.remove('hidden');
+                        btnAutorizar.style.display = '';
+                        btnAutorizar.classList.remove('hidden');
                         return;
                     }
 
                     if (data && data.calendar_autorizado) {
-                        document.getElementById('btn-autorizar-calendar').classList.add('hidden');
+                        btnAutorizar.style.display = 'none';
+                        btnAutorizar.classList.add('hidden');
                         this.showToast('📅 Tu Google Calendar ya está sincronizando eventos', 'success');
                     } else {
-                        document.getElementById('btn-autorizar-calendar').classList.remove('hidden');
+                        btnAutorizar.style.display = '';
+                        btnAutorizar.classList.remove('hidden');
                     }
                 } catch(err) {
                     console.log('⚠️ Error verificando autorización:', err.message);
                     // Mostrar botón por defecto si hay error
-                    document.getElementById('btn-autorizar-calendar').classList.remove('hidden');
+                    const btnAutorizar = document.getElementById('btn-autorizar-calendar');
+                    if (btnAutorizar) {
+                        btnAutorizar.style.display = '';
+                        btnAutorizar.classList.remove('hidden');
+                    }
                 }
             }
         };
