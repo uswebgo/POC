@@ -24,24 +24,29 @@
     <title>Agenda Inteligente • Agenda POC</title>
     
     <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        darkBg: '#080a0f',
-                        slateCard: '#0f131a',
-                        glassBg: 'rgba(13, 17, 28, 0.7)',
-                        glassBorder: 'rgba(255, 255, 255, 0.08)',
-                        brandCyan: '#22d3ee',
-                        brandBlue: '#3b82f6',
-                        brandPurple: '#a855f7',
-                    },
-                    fontFamily: {
-                        sans: ['Outfit', 'Google Sans Flex', 'system-ui', '-apple-system', 'sans-serif'],
+        // Configurar Tailwind después de que cargue
+        setTimeout(() => {
+            if (typeof tailwind !== 'undefined') {
+                tailwind.config = {
+                    theme: {
+                        extend: {
+                            colors: {
+                                darkBg: '#080a0f',
+                                slateCard: '#0f131a',
+                                glassBg: 'rgba(13, 17, 28, 0.7)',
+                                glassBorder: 'rgba(255, 255, 255, 0.08)',
+                                brandCyan: '#22d3ee',
+                                brandBlue: '#3b82f6',
+                                brandPurple: '#a855f7',
+                            },
+                            fontFamily: {
+                                sans: ['Outfit', 'Google Sans Flex', 'system-ui', '-apple-system', 'sans-serif'],
+                            }
+                        }
                     }
-                }
+                };
             }
-        }
+        }, 100);
     </script>
     
     <style>
@@ -705,6 +710,9 @@
                     localStorage.setItem('USER_EMAIL', EMAIL);
                     localStorage.setItem('USER_NAME', USER_NAME);
                     localStorage.setItem('USER_PHOTO', USER_PHOTO);
+
+                    // Crear/actualizar registro del usuario en la tabla usuarios
+                    this.crearRegistroUsuario(session.user.id, EMAIL, USER_NAME, USER_PHOTO);
 
                     // Mostrar la app
                     loginScreen.classList.add('hidden');
@@ -1374,6 +1382,27 @@
                 }
             },
 
+            // ===== CREAR REGISTRO DE USUARIO EN SUPABASE =====
+            async crearRegistroUsuario(userId, email, nombre, foto) {
+                try {
+                    const { error } = await client
+                        .from('usuarios')
+                        .upsert({
+                            id: userId,
+                            email: email,
+                            nombre: nombre,
+                            foto_url: foto,
+                            calendar_autorizado: false
+                        }, { onConflict: 'id' });
+
+                    if (error && error.code !== '42P01') { // Ignorar error si tabla no existe temporalmente
+                        console.log('⚠️ Aviso al crear usuario:', error.message);
+                    }
+                } catch(err) {
+                    console.log('⚠️ Error creando registro de usuario:', err.message);
+                }
+            },
+
             // ===== AUTORIZACIÓN DE GOOGLE CALENDAR (OAuth 2.0) =====
             async autorizarGoogleCalendar() {
                 try {
@@ -1463,6 +1492,13 @@
                         .eq('email', EMAIL)
                         .single();
 
+                    // Si hay error 406 o 404 (usuario no existe aún), mostrar botón de autorización
+                    if (error) {
+                        console.log('Usuario aún sin autorización, mostrando botón');
+                        document.getElementById('btn-autorizar-calendar').classList.remove('hidden');
+                        return;
+                    }
+
                     if (data && data.calendar_autorizado) {
                         document.getElementById('btn-autorizar-calendar').classList.add('hidden');
                         this.showToast('📅 Tu Google Calendar ya está sincronizando eventos', 'success');
@@ -1470,7 +1506,9 @@
                         document.getElementById('btn-autorizar-calendar').classList.remove('hidden');
                     }
                 } catch(err) {
-                    console.log('Autorización no verificada aún');
+                    console.log('⚠️ Error verificando autorización:', err.message);
+                    // Mostrar botón por defecto si hay error
+                    document.getElementById('btn-autorizar-calendar').classList.remove('hidden');
                 }
             }
         };
