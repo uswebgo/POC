@@ -832,21 +832,9 @@
                 try {
                     this.showToast('🚀 Redirigiendo a Google Auth...', 'info');
 
-                    // Usar URL explícita en producción, window.location en desarrollo
-                    let redirectTo = window.location.origin + window.location.pathname;
-
-                    // En producción con Cloudflare Workers
-                    if (window.location.hostname === 'agendapoc.uswebgo.workers.dev') {
-                        redirectTo = 'https://agendapoc.uswebgo.workers.dev/';
-                    } else if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-                        redirectTo = 'http://localhost:3000/';
-                    }
-
+                    // NO especificar redirectTo - Supabase manejará el callback automáticamente
                     const { error } = await client.auth.signInWithOAuth({
-                        provider: 'google',
-                        options: {
-                            redirectTo: redirectTo
-                        }
+                        provider: 'google'
                     });
                     if (error) throw error;
                 } catch(err) {
