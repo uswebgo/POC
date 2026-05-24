@@ -361,6 +361,91 @@
             from { box-shadow: 0 0 6px rgba(251, 191, 36, 0.2); }
             to { box-shadow: 0 0 16px rgba(251, 191, 36, 0.5); }
         }
+
+        /* ===== SECTION BUTTONS STYLING ===== */
+        .seccion-btn {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .seccion-btn::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, #60a5fa, #3b82f6);
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.3s ease;
+        }
+
+        .seccion-btn.active {
+            color: #60a5fa;
+            background: rgba(59, 130, 246, 0.1);
+            border-bottom: 2px solid #3b82f6;
+        }
+
+        .seccion-btn.active::after {
+            transform: scaleX(1);
+        }
+
+        /* ===== COLLAPSED FORM STYLING ===== */
+        .form-container {
+            max-height: 600px;
+            opacity: 1;
+            overflow: hidden;
+            transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+        }
+
+        .form-container.collapsed {
+            max-height: 0;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .form-toggle-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            padding: 12px;
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 12px;
+            color: #60a5fa;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 16px;
+        }
+
+        .form-toggle-btn:hover {
+            background: rgba(59, 130, 246, 0.15);
+            border-color: rgba(59, 130, 246, 0.5);
+            transform: translateY(-1px);
+        }
+
+        .form-toggle-btn .toggle-icon {
+            display: inline-block;
+            transition: transform 0.3s ease;
+        }
+
+        .form-toggle-btn.expanded .toggle-icon {
+            transform: rotate(180deg);
+        }
+
+        /* ===== SECTION CONTENT VISIBILITY ===== */
+        .section-content {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .section-content.active {
+            display: block;
+        }
     </style>
 </head>
 <body class="bg-[#080a0f] text-slate-200 min-h-screen relative font-sans">
@@ -478,13 +563,21 @@
         <!-- Contenido Principal -->
         <main class="max-w-2xl mx-auto px-4 mt-6 pb-28 space-y-6">
             
-            <!-- Crear Evento (Sleek Glass Card) -->
-            <div class="glass-card p-5 rounded-3xl shadow-[0_8px_30px_rgba(0,0,0,0.4)]">
-                <h2 class="font-extrabold text-sm mb-4 text-white uppercase tracking-wider flex items-center gap-2">
-                    <span class="text-blue-500">➕</span>
-                    <span>Crear Evento</span>
-                </h2>
-                <form id="form-evento" class="space-y-4">
+            <!-- Crear Evento (Collapsible) -->
+            <!-- Toggle Button -->
+            <button id="btn-toggle-form" onclick="app.toggleFormEvento()" class="form-toggle-btn">
+                <span>➕ Crear Evento</span>
+                <span class="toggle-icon">▼</span>
+            </button>
+
+            <!-- Form Container (Collapsed by default) -->
+            <div id="form-evento-container" class="form-container collapsed">
+                <div class="glass-card p-5 rounded-3xl shadow-[0_8px_30px_rgba(0,0,0,0.4)]">
+                    <h2 class="font-extrabold text-sm mb-4 text-white uppercase tracking-wider flex items-center gap-2">
+                        <span class="text-blue-500">📝</span>
+                        <span>Detalles del Evento</span>
+                    </h2>
+                    <form id="form-evento" class="space-y-4">
                     <input type="text" id="titulo" placeholder="¿Qué tienes planeado hoy?" class="w-full px-4 py-3 bg-slate-950/60 border border-white/10 text-white placeholder-slate-500 rounded-xl text-sm font-medium focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all outline-none" required>
 
                     <div class="grid grid-cols-2 gap-3">
@@ -512,66 +605,151 @@
                         💾 Guardar en Agenda
                     </button>
                 </form>
-            </div>
-
-            <!-- Extraer con IA (Fila Desplegable con Prompt) -->
-            <div class="glass-card p-5 rounded-3xl border-amber-500/20 bg-amber-950/5">
-                <div class="flex items-center justify-between mb-3">
-                    <div class="flex items-center gap-2">
-                        <h3 class="font-extrabold text-xs uppercase tracking-wider text-amber-400">🤖 Extraer Eventos con IA</h3>
-                        <span class="badge-ai text-[8px] uppercase font-black px-1.5 py-0.5 rounded text-amber-950">Gemini</span>
-                    </div>
-                    <button onclick="app.mostrarPrompt()" class="px-3 py-1 bg-amber-600/20 border border-amber-500/30 text-amber-300 text-[10px] font-bold rounded-lg hover:bg-amber-600/30 transition-all">Ver Prompt</button>
                 </div>
-                <p class="text-xs text-slate-400 mb-3">Genera el JSON de tus turnos o fotos enviándole el prompt a tu IA de confianza y pégalo abajo:</p>
-
-                <!-- Input JSON -->
-                <textarea id="json_ia" placeholder='[{"titulo":"Turno de Mañana","categoria":"Laboral","fecha":"YYYY-MM-DDTHH:MM:SS"}]' class="w-full px-4 py-3 bg-slate-950/50 border border-white/10 text-white placeholder-slate-600 rounded-xl text-xs font-mono resize-none mb-3 outline-none focus:border-amber-500" rows="3"></textarea>
-                <button onclick="app.importarJSON()" class="w-full bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-slate-950 font-extrabold py-2.5 rounded-xl transition-all text-xs">
-                    📥 Importar JSON a Calendario
-                </button>
             </div>
 
-            <!-- Botones de Control de Selección -->
-            <div class="flex gap-2">
-                <button id="btn-toggle-seleccion" onclick="modoSeleccion = !modoSeleccion; app.renderizar();" class="flex-1 px-4 py-2.5 bg-slate-900 border border-white/10 text-slate-300 font-bold rounded-xl hover:bg-slate-800 transition-all text-xs">
-                    ☐ Activar Selección Múltiple
-                </button>
+            <!-- ===== SECCIÓN: EVENTOS ===== -->
+            <div id="seccion-eventos" class="section-content active">
+                <!-- Extraer con IA (Fila Desplegable con Prompt) -->
+                <div class="glass-card p-5 rounded-3xl border-amber-500/20 bg-amber-950/5">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center gap-2">
+                            <h3 class="font-extrabold text-xs uppercase tracking-wider text-amber-400">🤖 Extraer Eventos con IA</h3>
+                            <span class="badge-ai text-[8px] uppercase font-black px-1.5 py-0.5 rounded text-amber-950">Gemini</span>
+                        </div>
+                        <button onclick="app.mostrarPrompt()" class="px-3 py-1 bg-amber-600/20 border border-amber-500/30 text-amber-300 text-[10px] font-bold rounded-lg hover:bg-amber-600/30 transition-all">Ver Prompt</button>
+                    </div>
+                    <p class="text-xs text-slate-400 mb-3">Genera el JSON de tus turnos o fotos enviándole el prompt a tu IA de confianza y pégalo abajo:</p>
+
+                    <!-- Input JSON -->
+                    <textarea id="json_ia" placeholder='[{"titulo":"Turno de Mañana","categoria":"Laboral","fecha":"YYYY-MM-DDTHH:MM:SS"}]' class="w-full px-4 py-3 bg-slate-950/50 border border-white/10 text-white placeholder-slate-600 rounded-xl text-xs font-mono resize-none mb-3 outline-none focus:border-amber-500" rows="3"></textarea>
+                    <button onclick="app.importarJSON()" class="w-full bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-slate-950 font-extrabold py-2.5 rounded-xl transition-all text-xs">
+                        📥 Importar JSON a Calendario
+                    </button>
+                </div>
+
+                <!-- Botones de Control de Selección -->
+                <div class="flex gap-2">
+                    <button id="btn-toggle-seleccion" onclick="modoSeleccion = !modoSeleccion; app.renderizar();" class="flex-1 px-4 py-2.5 bg-slate-900 border border-white/10 text-slate-300 font-bold rounded-xl hover:bg-slate-800 transition-all text-xs">
+                        ☐ Activar Selección Múltiple
+                    </button>
+                </div>
+
+                <!-- Lista de Eventos -->
+                <div id="lista-eventos" class="space-y-3">
+                    <div class="text-center py-12 text-slate-500">
+                        <p class="animate-pulse">Cargando eventos...</p>
+                    </div>
+                </div>
             </div>
 
-            <!-- Lista de Eventos -->
-            <div id="lista-eventos" class="space-y-3">
-                <div class="text-center py-12 text-slate-500">
-                    <p class="animate-pulse">Cargando eventos...</p>
+            <!-- ===== SECCIÓN: COMPRAS ===== -->
+            <div id="seccion-compras" class="section-content">
+                <h2 class="font-extrabold text-lg mb-4 text-white uppercase tracking-wider flex items-center gap-2">
+                    <span class="text-2xl">🛒</span>
+                    <span>Lista de Compras</span>
+                </h2>
+                <button onclick="app.abrirModal('modal-compra')" class="w-full mb-4 px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-xl transition-all text-sm shadow-[0_0_20px_rgba(99,102,241,0.3)]">
+                    ➕ Agregar Compra
+                </button>
+                <div id="lista-compras" class="space-y-3">
+                    <div class="text-center py-12 text-slate-500">
+                        <p class="animate-pulse">Cargando lista de compras...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== SECCIÓN: TAREAS ===== -->
+            <div id="seccion-tareas" class="section-content">
+                <h2 class="font-extrabold text-lg mb-4 text-white uppercase tracking-wider flex items-center gap-2">
+                    <span class="text-2xl">✓</span>
+                    <span>Mis Tareas</span>
+                </h2>
+                <button onclick="app.abrirModal('modal-tarea')" class="w-full mb-4 px-4 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold rounded-xl transition-all text-sm shadow-[0_0_20px_rgba(168,85,247,0.3)]">
+                    ➕ Nueva Tarea
+                </button>
+                <div id="lista-tareas" class="space-y-3">
+                    <div class="text-center py-12 text-slate-500">
+                        <p class="animate-pulse">Cargando tareas...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== SECCIÓN: GASTOS ===== -->
+            <div id="seccion-gastos" class="section-content">
+                <h2 class="font-extrabold text-lg mb-4 text-white uppercase tracking-wider flex items-center gap-2">
+                    <span class="text-2xl">💰</span>
+                    <span>Lista de Gastos</span>
+                </h2>
+                <button onclick="app.abrirModal('modal-gasto')" class="w-full mb-4 px-4 py-3 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-slate-950 font-bold rounded-xl transition-all text-sm shadow-[0_0_20px_rgba(251,191,36,0.3)]">
+                    ➕ Registrar Gasto
+                </button>
+                <div id="lista-gastos" class="space-y-3">
+                    <div class="text-center py-12 text-slate-500">
+                        <p class="animate-pulse">Cargando gastos...</p>
+                    </div>
                 </div>
             </div>
         </main>
 
-        <!-- Barra de Navegación Inferior (Floating Frosted Glass) -->
+        <!-- Barra de Navegación Inferior (Floating Frosted Glass) - SECCIONES PRINCIPALES -->
         <nav class="fixed bottom-4 left-4 right-4 max-w-xl mx-auto z-40 rounded-2xl glass-panel shadow-[0_12px_40px_rgba(0,0,0,0.6)]">
-            <div class="px-4 py-2.5 flex justify-around items-center">
-                <button onclick="app.instalarPWA()" class="nav-btn" title="Instalar como app">
-                    <span class="text-lg">📥</span>
-                    <span>Instalar</span>
+            <div class="px-2 py-2.5 flex justify-around items-center gap-1">
+                <!-- Botón Eventos -->
+                <button onclick="app.cambiarSeccion('eventos')" class="nav-btn seccion-btn" data-seccion="eventos" title="Ver Eventos">
+                    <span class="text-lg">📅</span>
+                    <span class="text-xs">Eventos</span>
                 </button>
-                <button onclick="app.refrescar()" class="nav-btn" title="Refrescar eventos">
-                    <span class="text-lg">🔄</span>
-                    <span>Refrescar</span>
+                <!-- Botón Compras -->
+                <button onclick="app.cambiarSeccion('compras')" class="nav-btn seccion-btn" data-seccion="compras" title="Lista de Compras">
+                    <span class="text-lg">🛒</span>
+                    <span class="text-xs">Compras</span>
                 </button>
-                <button onclick="app.abrirCategorias()" class="nav-btn" title="Gestionar categorías">
-                    <span class="text-lg">🏷️</span>
-                    <span>Categorías</span>
+                <!-- Botón Tareas -->
+                <button onclick="app.cambiarSeccion('tareas')" class="nav-btn seccion-btn" data-seccion="tareas" title="Mis Tareas">
+                    <span class="text-lg">✓</span>
+                    <span class="text-xs">Tareas</span>
                 </button>
-                <button onclick="app.abrirGoogleCalendar()" class="nav-btn" title="Abrir Google Calendar">
-                    <span class="text-lg">📆</span>
-                    <span>Google Cal</span>
+                <!-- Botón Gastos -->
+                <button onclick="app.cambiarSeccion('gastos')" class="nav-btn seccion-btn" data-seccion="gastos" title="Lista de Gastos">
+                    <span class="text-lg">💰</span>
+                    <span class="text-xs">Gastos</span>
                 </button>
-                <button id="btn-autorizar-calendar" onclick="app.autorizarGoogleCalendar()" class="nav-btn hidden" title="Autorizar Google Calendar">
-                    <span class="text-lg">🔐</span>
-                    <span>Autorizar Cal</span>
+                <!-- Botón Menú (más opciones) -->
+                <button onclick="app.abrirMenuOpciones()" class="nav-btn" title="Más opciones">
+                    <span class="text-lg">⋮</span>
+                    <span class="text-xs">Más</span>
                 </button>
             </div>
         </nav>
+    </div>
+
+    <!-- ================= MODAL MENÚ DE OPCIONES ================= -->
+    <div id="modal-opciones" class="modal-overlay">
+        <div class="modal-content">
+            <div class="sticky top-0 bg-[#0f131a] border-b border-white/5 px-6 py-4 flex justify-between items-center z-10">
+                <h2 class="text-base font-bold text-white uppercase tracking-wider">⋮ Más Opciones</h2>
+                <button onclick="app.cerrarModal()" class="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-slate-400 hover:text-white transition-colors">✕</button>
+            </div>
+            <div class="p-6 space-y-3">
+                <button onclick="app.instalarPWA(); app.cerrarModal();" class="w-full px-4 py-3 bg-blue-600/20 border border-blue-500/30 text-blue-400 font-bold rounded-xl hover:bg-blue-600/30 transition-all text-left">
+                    📥 Instalar como App
+                </button>
+                <button onclick="app.refrescar(); app.cerrarModal();" class="w-full px-4 py-3 bg-slate-800 border border-white/10 text-white font-bold rounded-xl hover:bg-slate-700 transition-all text-left">
+                    🔄 Refrescar Datos
+                </button>
+                <button onclick="app.abrirCategorias(); app.cerrarModal();" class="w-full px-4 py-3 bg-slate-800 border border-white/10 text-white font-bold rounded-xl hover:bg-slate-700 transition-all text-left">
+                    🏷️ Gestionar Categorías
+                </button>
+                <button onclick="app.abrirGoogleCalendar(); app.cerrarModal();" class="w-full px-4 py-3 bg-slate-800 border border-white/10 text-white font-bold rounded-xl hover:bg-slate-700 transition-all text-left">
+                    📆 Abrir Google Calendar
+                </button>
+                <hr class="border-white/10 my-2">
+                <button onclick="app.logout();" class="w-full px-4 py-3 bg-red-500/20 border border-red-500/30 text-red-400 font-bold rounded-xl hover:bg-red-500/30 transition-all text-left">
+                    🚪 Cerrar Sesión
+                </button>
+            </div>
+        </div>
     </div>
 
     <!-- ================= MODAL EDITAR EVENTO ================= -->
@@ -607,6 +785,86 @@
                     <button type="submit" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl transition-colors text-sm shadow-[0_4px_15px_rgba(37,99,235,0.2)]">Guardar Cambios</button>
                     <button type="button" id="btn-eliminar-evento" onclick="app.borrar(document.getElementById('edit-id').value)" class="bg-red-500/10 border border-red-500/30 text-red-400 font-bold py-3 rounded-xl hover:bg-red-500/25 transition-colors text-sm">Eliminar</button>
                 </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ================= MODAL AGREGAR COMPRA ================= -->
+    <div id="modal-compra" class="modal-overlay">
+        <div class="modal-content">
+            <div class="sticky top-0 bg-[#0f131a] border-b border-white/5 px-6 py-4 flex justify-between items-center z-10">
+                <h2 class="text-base font-bold text-white uppercase tracking-wider">🛒 Nueva Compra</h2>
+                <button onclick="app.cerrarModal()" class="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-slate-400 hover:text-white transition-colors">✕</button>
+            </div>
+            <form id="form-compras" onsubmit="app.guardarCompra(event)" class="p-6 space-y-4">
+                <input type="text" id="compra-titulo" placeholder="¿Qué necesitas comprar?" class="w-full px-4 py-3 bg-slate-950/60 border border-white/10 text-white placeholder-slate-500 rounded-xl text-sm font-medium focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all outline-none" required>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <input type="number" id="compra-cantidad" placeholder="Cantidad" class="w-full px-4 py-3 bg-slate-950/60 border border-white/10 text-white rounded-xl text-sm font-medium focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all outline-none" value="1" min="1">
+                    <input type="text" id="compra-notas" placeholder="Notas (opcional)" class="w-full px-4 py-3 bg-slate-950/60 border border-white/10 text-white placeholder-slate-500 rounded-xl text-sm font-medium focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all outline-none">
+                </div>
+
+                <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold py-3 rounded-xl transition-all duration-300 shadow-[0_0_20px_rgba(99,102,241,0.3)] text-sm">
+                    ✅ Agregar a Lista
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ================= MODAL AGREGAR TAREA ================= -->
+    <div id="modal-tarea" class="modal-overlay">
+        <div class="modal-content">
+            <div class="sticky top-0 bg-[#0f131a] border-b border-white/5 px-6 py-4 flex justify-between items-center z-10">
+                <h2 class="text-base font-bold text-white uppercase tracking-wider">✓ Nueva Tarea</h2>
+                <button onclick="app.cerrarModal()" class="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-slate-400 hover:text-white transition-colors">✕</button>
+            </div>
+            <form id="form-tareas" onsubmit="app.guardarTarea(event)" class="p-6 space-y-4">
+                <textarea id="tarea-descripcion" placeholder="Describe tu tarea..." class="w-full px-4 py-3 bg-slate-950/60 border border-white/10 text-white placeholder-slate-500 rounded-xl text-sm font-medium focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all outline-none resize-none" rows="2" required></textarea>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <input type="datetime-local" id="tarea-vencimiento" placeholder="Fecha vencimiento" class="w-full px-4 py-3 bg-slate-950/60 border border-white/10 text-white rounded-xl text-sm font-medium focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all outline-none">
+
+                    <select id="tarea-prioridad" class="w-full px-4 py-3 bg-slate-950/60 border border-white/10 text-white rounded-xl text-sm font-medium focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all outline-none">
+                        <option value="media">Prioridad: Media</option>
+                        <option value="baja">Prioridad: Baja</option>
+                        <option value="alta">Prioridad: Alta</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold py-3 rounded-xl transition-all duration-300 shadow-[0_0_20px_rgba(168,85,247,0.3)] text-sm">
+                    ✅ Crear Tarea
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ================= MODAL AGREGAR GASTO ================= -->
+    <div id="modal-gasto" class="modal-overlay">
+        <div class="modal-content">
+            <div class="sticky top-0 bg-[#0f131a] border-b border-white/5 px-6 py-4 flex justify-between items-center z-10">
+                <h2 class="text-base font-bold text-white uppercase tracking-wider">💰 Registrar Gasto</h2>
+                <button onclick="app.cerrarModal()" class="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-slate-400 hover:text-white transition-colors">✕</button>
+            </div>
+            <form id="form-gastos" onsubmit="app.guardarGasto(event)" class="p-6 space-y-4">
+                <input type="text" id="gasto-descripcion" placeholder="¿En qué gastaste?" class="w-full px-4 py-3 bg-slate-950/60 border border-white/10 text-white placeholder-slate-500 rounded-xl text-sm font-medium focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all outline-none" required>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <input type="number" id="gasto-monto" placeholder="Monto ($)" class="w-full px-4 py-3 bg-slate-950/60 border border-white/10 text-white rounded-xl text-sm font-medium focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all outline-none" step="0.01" min="0" required>
+
+                    <select id="gasto-categoria" class="w-full px-4 py-3 bg-slate-950/60 border border-white/10 text-white rounded-xl text-sm font-medium focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all outline-none" required>
+                        <option value="">Categoría</option>
+                        <option value="alimentación">🍔 Alimentación</option>
+                        <option value="transporte">🚗 Transporte</option>
+                        <option value="servicios">⚡ Servicios</option>
+                        <option value="entretenimiento">🎮 Entretenimiento</option>
+                        <option value="salud">🏥 Salud</option>
+                        <option value="otros">📦 Otros</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="w-full bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-slate-950 font-bold py-3 rounded-xl transition-all duration-300 shadow-[0_0_20px_rgba(251,191,36,0.3)] text-sm">
+                    ✅ Registrar Gasto
+                </button>
             </form>
         </div>
     </div>
@@ -707,7 +965,13 @@
         let expandedEventId = null;
         let eventosSeleccionados = new Set();
         let modoSeleccion = false;
-        
+
+        // ===== NUEVAS SECCIONES =====
+        let seccionActual = 'eventos'; // 'eventos', 'compras', 'tareas', 'gastos'
+        let compras = [];
+        let tareas = [];
+        let gastos = [];
+
         // Datos dinámicos de usuario
         let EMAIL = '';
         let USER_NAME = '';
@@ -826,7 +1090,10 @@
 
                 this.checkSession();
                 this.setupEventListeners();
-                
+
+                // Marcar la sección inicial como activa
+                this.cambiarSeccion('eventos');
+
                 // Intervalo de refresco
                 setInterval(() => {
                     if (EMAIL) this.cargarEventos();
@@ -1585,6 +1852,391 @@
                         btnAutorizar.style.display = '';
                         btnAutorizar.classList.remove('hidden');
                     }
+                }
+            },
+
+            // ===== GESTIÓN DE SECCIONES (NAVEGACIÓN) =====
+            cambiarSeccion(nuevaSeccion) {
+                seccionActual = nuevaSeccion;
+
+                // Ocultar todas las secciones
+                document.querySelectorAll('.section-content').forEach(section => {
+                    section.classList.remove('active');
+                });
+
+                // Mostrar la sección activa
+                const seccionElement = document.getElementById(`seccion-${nuevaSeccion}`);
+                if (seccionElement) {
+                    seccionElement.classList.add('active');
+                }
+
+                // Actualizar estilos de los botones de navegación
+                document.querySelectorAll('.seccion-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                    if (btn.getAttribute('data-seccion') === nuevaSeccion) {
+                        btn.classList.add('active');
+                    }
+                });
+
+                // Ocultar el formulario cuando cambies de sección
+                if (nuevaSeccion !== 'eventos') {
+                    const formContainer = document.getElementById('form-evento-container');
+                    if (formContainer) {
+                        formContainer.classList.add('collapsed');
+                        const toggleBtn = document.getElementById('btn-toggle-form');
+                        if (toggleBtn) toggleBtn.classList.remove('expanded');
+                    }
+                }
+
+                // Cargar datos de la sección
+                if (nuevaSeccion === 'compras') {
+                    this.cargarCompras();
+                } else if (nuevaSeccion === 'tareas') {
+                    this.cargarTareas();
+                } else if (nuevaSeccion === 'gastos') {
+                    this.cargarGastos();
+                }
+            },
+
+            // ===== TOGGLE FORM EVENTO =====
+            toggleFormEvento() {
+                const formContainer = document.getElementById('form-evento-container');
+                const toggleBtn = document.getElementById('btn-toggle-form');
+
+                if (!formContainer || !toggleBtn) return;
+
+                formContainer.classList.toggle('collapsed');
+                toggleBtn.classList.toggle('expanded');
+
+                // Scroll al formulario si se expande
+                if (!formContainer.classList.contains('collapsed')) {
+                    setTimeout(() => {
+                        formContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }, 100);
+                }
+            },
+
+            // ===== ABRIR MENÚ DE OPCIONES =====
+            abrirMenuOpciones() {
+                this.abrirModal('modal-opciones');
+            },
+
+            // ===== COMPRAS CRUD =====
+            async cargarCompras() {
+                try {
+                    const { data, error } = await client
+                        .from('compras')
+                        .select('*')
+                        .eq('email_usuario', EMAIL)
+                        .order('fecha_creacion', { ascending: false });
+
+                    if (error) throw error;
+                    compras = data || [];
+                    this.renderizarCompras();
+                } catch(err) {
+                    console.error('Error al cargar compras:', err);
+                    this.showToast('❌ Error al cargar compras: ' + err.message, 'error');
+                }
+            },
+
+            renderizarCompras() {
+                const lista = document.getElementById('lista-compras');
+                if (!lista) return;
+
+                if (compras.length === 0) {
+                    lista.innerHTML = '<div class="text-center py-12 text-slate-500"><p>📭 No hay compras aún</p></div>';
+                    return;
+                }
+
+                lista.innerHTML = compras.map(item => `
+                    <div class="glass-card p-4 rounded-xl flex items-center justify-between">
+                        <div class="flex-1">
+                            <p class="text-sm font-bold text-white">${item.titulo}</p>
+                            <p class="text-xs text-slate-400">x${item.cantidad}${item.notas ? ' - ' + item.notas : ''}</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="app.toggleCompra('${item.id}')" class="px-3 py-2 rounded-lg ${item.completada ? 'bg-green-500/20 text-green-400' : 'bg-slate-800 text-slate-400'} text-sm font-bold transition-all">
+                                ${item.completada ? '✓' : '○'}
+                            </button>
+                            <button onclick="app.eliminarCompra('${item.id}')" class="px-3 py-2 rounded-lg bg-red-500/10 text-red-400 text-sm font-bold hover:bg-red-500/20 transition-all">🗑️</button>
+                        </div>
+                    </div>
+                `).join('');
+            },
+
+            async guardarCompra(e) {
+                if (e) e.preventDefault();
+
+                const titulo = document.getElementById('compra-titulo')?.value;
+                const cantidad = parseInt(document.getElementById('compra-cantidad')?.value || '1');
+                const notas = document.getElementById('compra-notas')?.value;
+
+                if (!titulo) {
+                    this.showToast('Ingresa el nombre del item', 'error');
+                    return;
+                }
+
+                try {
+                    const { error } = await client.from('compras').insert([{
+                        titulo,
+                        cantidad,
+                        notas: notas || null,
+                        email_usuario: EMAIL,
+                        completada: false
+                    }]);
+
+                    if (error) throw error;
+
+                    document.getElementById('form-compras')?.reset();
+                    this.cerrarModal();
+                    this.cargarCompras();
+                    this.showToast('✅ Compra agregada', 'success');
+                } catch(err) {
+                    this.showToast('❌ Error: ' + err.message, 'error');
+                }
+            },
+
+            async toggleCompra(id) {
+                const compra = compras.find(c => c.id === id);
+                if (!compra) return;
+
+                try {
+                    const { error } = await client
+                        .from('compras')
+                        .update({ completada: !compra.completada })
+                        .eq('id', id);
+
+                    if (error) throw error;
+                    this.cargarCompras();
+                } catch(err) {
+                    this.showToast('❌ Error: ' + err.message, 'error');
+                }
+            },
+
+            async eliminarCompra(id) {
+                if (!confirm('¿Eliminar esta compra?')) return;
+
+                try {
+                    const { error } = await client.from('compras').delete().eq('id', id);
+                    if (error) throw error;
+                    this.cargarCompras();
+                    this.showToast('✅ Compra eliminada', 'success');
+                } catch(err) {
+                    this.showToast('❌ Error: ' + err.message, 'error');
+                }
+            },
+
+            // ===== TAREAS CRUD =====
+            async cargarTareas() {
+                try {
+                    const { data, error } = await client
+                        .from('tareas')
+                        .select('*')
+                        .eq('email_usuario', EMAIL)
+                        .order('fecha_vencimiento', { ascending: true, nullsLast: true });
+
+                    if (error) throw error;
+                    tareas = data || [];
+                    this.renderizarTareas();
+                } catch(err) {
+                    console.error('Error al cargar tareas:', err);
+                    this.showToast('❌ Error al cargar tareas: ' + err.message, 'error');
+                }
+            },
+
+            renderizarTareas() {
+                const lista = document.getElementById('lista-tareas');
+                if (!lista) return;
+
+                if (tareas.length === 0) {
+                    lista.innerHTML = '<div class="text-center py-12 text-slate-500"><p>📭 No hay tareas aún</p></div>';
+                    return;
+                }
+
+                lista.innerHTML = tareas.map(tarea => {
+                    const priorColors = { alta: 'text-red-400 bg-red-500/10', media: 'text-yellow-400 bg-yellow-500/10', baja: 'text-green-400 bg-green-500/10' };
+                    const colors = priorColors[tarea.prioridad] || priorColors.media;
+                    const fechaStr = tarea.fecha_vencimiento ? new Date(tarea.fecha_vencimiento).toLocaleDateString('es') : 'Sin fecha';
+
+                    return `
+                        <div class="glass-card p-4 rounded-xl ${tarea.completada ? 'opacity-60' : ''}">
+                            <div class="flex items-start justify-between">
+                                <div class="flex-1">
+                                    <p class="text-sm font-bold text-white ${tarea.completada ? 'line-through' : ''}">${tarea.descripcion}</p>
+                                    <div class="flex gap-2 mt-2 flex-wrap">
+                                        <span class="text-xs px-2 py-1 rounded ${colors}">${tarea.prioridad}</span>
+                                        <span class="text-xs px-2 py-1 rounded bg-slate-800 text-slate-400">📅 ${fechaStr}</span>
+                                    </div>
+                                </div>
+                                <div class="flex gap-2">
+                                    <button onclick="app.toggleTarea('${tarea.id}')" class="px-3 py-2 rounded-lg ${tarea.completada ? 'bg-green-500/20 text-green-400' : 'bg-slate-800 text-slate-400'} text-sm font-bold transition-all">
+                                        ${tarea.completada ? '✓' : '○'}
+                                    </button>
+                                    <button onclick="app.eliminarTarea('${tarea.id}')" class="px-3 py-2 rounded-lg bg-red-500/10 text-red-400 text-sm font-bold hover:bg-red-500/20 transition-all">🗑️</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            },
+
+            async guardarTarea(e) {
+                if (e) e.preventDefault();
+
+                const descripcion = document.getElementById('tarea-descripcion')?.value;
+                const vencimiento = document.getElementById('tarea-vencimiento')?.value;
+                const prioridad = document.getElementById('tarea-prioridad')?.value || 'media';
+
+                if (!descripcion) {
+                    this.showToast('Describe la tarea', 'error');
+                    return;
+                }
+
+                try {
+                    const { error } = await client.from('tareas').insert([{
+                        descripcion,
+                        fecha_vencimiento: vencimiento ? new Date(vencimiento).toISOString() : null,
+                        prioridad,
+                        email_usuario: EMAIL,
+                        completada: false
+                    }]);
+
+                    if (error) throw error;
+
+                    document.getElementById('form-tareas')?.reset();
+                    this.cerrarModal();
+                    this.cargarTareas();
+                    this.showToast('✅ Tarea creada', 'success');
+                } catch(err) {
+                    this.showToast('❌ Error: ' + err.message, 'error');
+                }
+            },
+
+            async toggleTarea(id) {
+                const tarea = tareas.find(t => t.id === id);
+                if (!tarea) return;
+
+                try {
+                    const { error } = await client
+                        .from('tareas')
+                        .update({ completada: !tarea.completada })
+                        .eq('id', id);
+
+                    if (error) throw error;
+                    this.cargarTareas();
+                } catch(err) {
+                    this.showToast('❌ Error: ' + err.message, 'error');
+                }
+            },
+
+            async eliminarTarea(id) {
+                if (!confirm('¿Eliminar esta tarea?')) return;
+
+                try {
+                    const { error } = await client.from('tareas').delete().eq('id', id);
+                    if (error) throw error;
+                    this.cargarTareas();
+                    this.showToast('✅ Tarea eliminada', 'success');
+                } catch(err) {
+                    this.showToast('❌ Error: ' + err.message, 'error');
+                }
+            },
+
+            // ===== GASTOS CRUD =====
+            async cargarGastos() {
+                try {
+                    const { data, error } = await client
+                        .from('gastos')
+                        .select('*')
+                        .eq('email_usuario', EMAIL)
+                        .order('fecha_creacion', { ascending: false });
+
+                    if (error) throw error;
+                    gastos = data || [];
+                    this.renderizarGastos();
+                } catch(err) {
+                    console.error('Error al cargar gastos:', err);
+                    this.showToast('❌ Error al cargar gastos: ' + err.message, 'error');
+                }
+            },
+
+            renderizarGastos() {
+                const lista = document.getElementById('lista-gastos');
+                if (!lista) return;
+
+                if (gastos.length === 0) {
+                    lista.innerHTML = '<div class="text-center py-12 text-slate-500"><p>📭 No hay gastos aún</p></div>';
+                    return;
+                }
+
+                const totalGastos = gastos.reduce((sum, g) => sum + parseFloat(g.monto || 0), 0);
+
+                let html = `
+                    <div class="glass-card p-4 rounded-xl mb-4 bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20">
+                        <p class="text-xs text-slate-400 uppercase">Total Gastado</p>
+                        <p class="text-2xl font-bold text-white">💰 $${totalGastos.toFixed(2)}</p>
+                    </div>
+                `;
+
+                html += gastos.map(gasto => `
+                    <div class="glass-card p-4 rounded-xl">
+                        <div class="flex items-center justify-between">
+                            <div class="flex-1">
+                                <p class="text-sm font-bold text-white">${gasto.descripcion}</p>
+                                <p class="text-xs text-slate-400">${gasto.categoria_gasto}</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-sm font-bold text-green-400">$${parseFloat(gasto.monto).toFixed(2)}</p>
+                                <button onclick="app.eliminarGasto('${gasto.id}')" class="text-xs px-2 py-1 mt-2 rounded bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-all">Eliminar</button>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+
+                lista.innerHTML = html;
+            },
+
+            async guardarGasto(e) {
+                if (e) e.preventDefault();
+
+                const descripcion = document.getElementById('gasto-descripcion')?.value;
+                const monto = parseFloat(document.getElementById('gasto-monto')?.value || 0);
+                const categoria = document.getElementById('gasto-categoria')?.value;
+
+                if (!descripcion || monto <= 0 || !categoria) {
+                    this.showToast('Completa todos los campos', 'error');
+                    return;
+                }
+
+                try {
+                    const { error } = await client.from('gastos').insert([{
+                        descripcion,
+                        monto,
+                        categoria_gasto: categoria,
+                        email_usuario: EMAIL
+                    }]);
+
+                    if (error) throw error;
+
+                    document.getElementById('form-gastos')?.reset();
+                    this.cerrarModal();
+                    this.cargarGastos();
+                    this.showToast('✅ Gasto agregado', 'success');
+                } catch(err) {
+                    this.showToast('❌ Error: ' + err.message, 'error');
+                }
+            },
+
+            async eliminarGasto(id) {
+                if (!confirm('¿Eliminar este gasto?')) return;
+
+                try {
+                    const { error } = await client.from('gastos').delete().eq('id', id);
+                    if (error) throw error;
+                    this.cargarGastos();
+                    this.showToast('✅ Gasto eliminado', 'success');
+                } catch(err) {
+                    this.showToast('❌ Error: ' + err.message, 'error');
                 }
             }
         };
