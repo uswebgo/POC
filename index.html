@@ -4,10 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="theme-color" content="#0a0d14">
-    <meta name="description" content="Aplicación inteligente de planificación estilo Google Antigravity">
+    <meta name="description" content="Aplicación inteligente de planificación estilo Tu Agenda">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Agenda Antigravity">
+    <meta name="apple-mobile-web-app-title" content="Agenda Agenda">
     <link rel="manifest" href="manifest.json">
     <link rel="icon" href="https://lh3.googleusercontent.com/d/1eQJlngZSouUJxarOvjBuB0ZuwN66jrPR">
     
@@ -21,7 +21,7 @@
     <!-- Supabase JS Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
-    <title>Agenda Inteligente • Antigravity POC</title>
+    <title>Agenda Inteligente • Agenda POC</title>
     
     <script>
         tailwind.config = {
@@ -321,13 +321,13 @@
     <!-- Toast Notifications Container -->
     <div id="toast-container" class="toast-container"></div>
 
-    <!-- Fondo Ambient Glow Estilo Antigravity -->
+    <!-- Fondo Ambient Glow Estilo Agenda -->
     <div class="fixed inset-0 pointer-events-none z-0 overflow-hidden bg-radial-gradient">
         <div class="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] rounded-full bg-blue-600/10 blur-[130px]"></div>
         <div class="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] rounded-full bg-purple-600/10 blur-[130px]"></div>
     </div>
 
-    <!-- ================= PANTALLA DE INICIO DE SESIÓN (Google Antigravity style) ================= -->
+    <!-- ================= PANTALLA DE INICIO DE SESIÓN (Tu Agenda style) ================= -->
     <div id="login-screen" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-[#07090e] px-4 py-8 overflow-y-auto">
         <!-- Luces de fondo animadas -->
         <div class="absolute top-1/4 left-1/4 w-80 h-80 bg-blue-500/15 rounded-full blur-[140px] pointer-events-none"></div>
@@ -335,12 +335,12 @@
 
         <div class="w-full max-w-md bg-slate-900/60 backdrop-blur-2xl border border-white/10 p-8 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.6)] text-center relative overflow-hidden z-10 glass-panel">
             
-            <!-- Antigravity Logo -->
+            <!-- Agenda Logo -->
             <div class="mx-auto w-16 h-16 bg-gradient-to-br from-cyan-400 via-blue-600 to-purple-600 rounded-2xl flex items-center justify-center logo-glowing mb-6">
                 <span class="text-white font-black text-3xl tracking-tight">A</span>
             </div>
             
-            <h2 class="text-2xl font-extrabold tracking-tight text-white mb-1">Google Antigravity</h2>
+            <h2 class="text-2xl font-extrabold tracking-tight text-white mb-1">Tu Agenda</h2>
             <p class="text-xs font-bold bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text text-transparent uppercase tracking-wider mb-6">Build the new way • Agenda POC</p>
             
             <div class="h-[1px] w-full bg-gradient-to-r from-transparent via-white/10 to-transparent my-6"></div>
@@ -384,7 +384,7 @@
                         </div>
                         <div>
                             <div class="flex items-center gap-1.5">
-                                <h1 class="text-sm font-bold text-white tracking-tight">Antigravity</h1>
+                                <h1 class="text-sm font-bold text-white tracking-tight">Agenda</h1>
                                 <span class="badge-ai text-[8px] font-extrabold uppercase px-1.5 py-0.5 rounded text-amber-900">POC v3.1</span>
                             </div>
                             <p class="text-[10px] text-slate-400 font-semibold tracking-wide uppercase">Agenda Inteligente Híbrida</p>
@@ -397,8 +397,8 @@
                             <div id="header-user-name" class="text-xs font-bold text-white leading-tight">Usuario</div>
                             <div id="header-user-email" class="text-[9px] text-slate-400 font-medium leading-none">email@gmail.com</div>
                         </div>
-                        <div class="relative cursor-pointer group" onclick="app.abrirAjustes()">
-                            <img id="header-user-avatar" src="https://lh3.googleusercontent.com/d/1eQJlngZSouUJxarOvjBuB0ZuwN66jrPR" class="w-9 h-9 rounded-xl border border-white/20 shadow-[0_0_15px_rgba(59,130,246,0.2)] object-cover group-hover:border-blue-500 transition-colors">
+                        <div class="relative">
+                            <img id="header-user-avatar" src="https://lh3.googleusercontent.com/d/1eQJlngZSouUJxarOvjBuB0ZuwN66jrPR" class="w-9 h-9 rounded-xl border border-white/20 shadow-[0_0_15px_rgba(59,130,246,0.2)] object-cover">
                             <span class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 rounded-full border border-slate-900"></span>
                         </div>
                         <button onclick="app.logout()" class="hidden sm:flex items-center gap-1.5 bg-red-600/10 border border-red-500/30 text-red-400 text-xs font-bold px-3 py-2 rounded-lg hover:bg-red-600/20 transition-all">
@@ -519,10 +519,6 @@
                     <span class="text-lg">📆</span>
                     <span>Google Cal</span>
                 </button>
-                <button onclick="app.abrirAjustes()" id="nav-btn-ajustes" class="nav-btn" title="Configuración">
-                    <span class="text-lg">⚙️</span>
-                    <span>Ajustes</span>
-                </button>
             </div>
         </nav>
     </div>
@@ -634,61 +630,6 @@
         </div>
     </div>
 
-    <!-- ================= MODAL AJUSTES Y CONFIGURACIÓN ================= -->
-    <div id="modal-ajustes" class="modal-overlay">
-        <div class="modal-content">
-            <div class="sticky top-0 bg-[#0f131a] border-b border-white/5 px-6 py-4 flex justify-between items-center z-10">
-                <h2 class="text-base font-bold text-white uppercase tracking-wider">⚙️ Configuración del POC</h2>
-                <button onclick="app.cerrarModal()" class="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-slate-400 hover:text-white transition-colors">✕</button>
-            </div>
-            <div class="p-6 space-y-6">
-                <!-- Información del Usuario Autenticado -->
-                <div class="flex items-center gap-4 bg-slate-900/50 border border-white/5 p-4 rounded-2xl">
-                    <img id="ajustes-user-avatar" src="https://lh3.googleusercontent.com/d/1eQJlngZSouUJxarOvjBuB0ZuwN66jrPR" class="w-12 h-12 rounded-xl border border-white/10 object-cover">
-                    <div class="flex-1 min-w-0">
-                        <div id="ajustes-user-name" class="text-sm font-bold text-white truncate">Usuario Demo</div>
-                        <div id="ajustes-user-email" class="text-xs text-slate-400 truncate">j.castillo.bozo@gmail.com</div>
-                        <div id="ajustes-user-status" class="inline-flex items-center gap-1 text-[9px] bg-blue-500/10 text-blue-400 px-2 py-0.5 rounded-full font-bold mt-1 uppercase tracking-wider">Sesión Activa</div>
-                    </div>
-                </div>
-
-                <div class="h-[1px] w-full bg-white/5"></div>
-
-                <!-- Credenciales y Webhooks -->
-                <div class="space-y-4">
-                    <h3 class="font-extrabold text-xs text-slate-400 uppercase tracking-wider">🔗 Integraciones & Claves</h3>
-                    
-                    <div>
-                        <label class="text-[10px] font-bold text-slate-400 uppercase mb-1.5 block">Supabase URL</label>
-                        <input type="text" id="config-supabase-url" placeholder="https://..." class="w-full px-4 py-3 bg-slate-950/60 border border-white/10 text-white rounded-xl text-xs focus:border-blue-500 outline-none">
-                    </div>
-
-                    <div>
-                        <label class="text-[10px] font-bold text-slate-400 uppercase mb-1.5 block">Supabase Anon Key</label>
-                        <input type="text" id="config-supabase-key" placeholder="eyJhbGciOi..." class="w-full px-4 py-3 bg-slate-950/60 border border-white/10 text-white rounded-xl text-xs focus:border-blue-500 outline-none">
-                    </div>
-
-                    <div>
-                        <label class="text-[10px] font-bold text-slate-400 uppercase mb-1.5 block">Google Apps Script Webhook</label>
-                        <input type="text" id="config-webhook" placeholder="https://script.google.com/macros/s/..." class="w-full px-4 py-3 bg-slate-950/60 border border-white/10 text-white rounded-xl text-xs focus:border-blue-500 outline-none">
-                    </div>
-                </div>
-
-                <div class="h-[1px] w-full bg-white/5 pt-2"></div>
-
-                <!-- Botones -->
-                <div class="space-y-3">
-                    <button onclick="app.guardarAjustes()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl transition-colors text-sm shadow-[0_4px_15px_rgba(37,99,235,0.2)]">
-                        💾 Guardar Ajustes
-                    </button>
-                    <button onclick="app.logout()" class="w-full bg-red-600/10 border border-red-500/30 text-red-400 font-bold py-3 rounded-xl hover:bg-red-600/20 transition-all text-sm flex items-center justify-center gap-2">
-                        <span>🚪</span>
-                        <span>Cerrar Sesión</span>
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <!-- ================= SISTEMA DE SCRIPT PRINCIPAL ================= -->
     <script>
@@ -770,19 +711,7 @@
                     document.getElementById('header-user-email').textContent = EMAIL;
                     if (USER_PHOTO) {
                         document.getElementById('header-user-avatar').src = USER_PHOTO;
-                        document.getElementById('ajustes-user-avatar').src = USER_PHOTO;
                     }
-
-                    // Actualizar elementos del modal de Ajustes
-                    document.getElementById('ajustes-user-name').textContent = USER_NAME;
-                    document.getElementById('ajustes-user-email').textContent = EMAIL;
-                    document.getElementById('ajustes-user-status').textContent = 'Google Secure Session';
-                    document.getElementById('ajustes-user-status').className = 'inline-flex items-center gap-1 text-[9px] px-2 py-0.5 rounded-full font-bold mt-1 uppercase tracking-wider bg-emerald-500/10 text-emerald-400';
-
-                    // Rellenar entradas de Ajustes
-                    document.getElementById('config-supabase-url').value = SUPABASE_URL;
-                    document.getElementById('config-supabase-key').value = SUPABASE_KEY;
-                    document.getElementById('config-webhook').value = APPS_SCRIPT_WEBHOOK;
 
                     // Cargar datos
                     this.cargarCategorias();
@@ -1352,33 +1281,6 @@
                 }
             },
 
-            // ===== AJUSTES DE CONFIGURACIÓN DEL POC =====
-            async guardarAjustes() {
-                const sUrl = document.getElementById('config-supabase-url').value.trim();
-                const sKey = document.getElementById('config-supabase-key').value.trim();
-                const webhook = document.getElementById('config-webhook').value.trim();
-
-                if (sUrl) {
-                    SUPABASE_URL = sUrl;
-                    localStorage.setItem('CONFIG_SUPABASE_URL', sUrl);
-                }
-                if (sKey) {
-                    SUPABASE_KEY = sKey;
-                    localStorage.setItem('CONFIG_SUPABASE_KEY', sKey);
-                }
-                if (webhook) {
-                    APPS_SCRIPT_WEBHOOK = webhook;
-                    localStorage.setItem('CONFIG_WEBHOOK', webhook);
-                }
-
-                // Reinicializar cliente Supabase
-                client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-                this.showToast('⚙️ Ajustes guardados y aplicados', 'success');
-                this.cerrarModal();
-                this.checkSession();
-            },
-
             // ===== APERTURA Y CIERRE DE MODALES =====
             abrirModal(id) {
                 const overlay = document.getElementById(id);
@@ -1420,10 +1322,6 @@
 
             abrirCategorias() {
                 this.abrirModal('modal-categorias');
-            },
-
-            abrirAjustes() {
-                this.abrirModal('modal-ajustes');
             },
 
             refrescar() {
