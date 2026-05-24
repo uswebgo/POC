@@ -519,6 +519,10 @@
                     <span class="text-lg">📆</span>
                     <span>Google Cal</span>
                 </button>
+                <button id="btn-autorizar-calendar" onclick="app.autorizarGoogleCalendar()" class="nav-btn hidden" title="Autorizar Google Calendar">
+                    <span class="text-lg">🔐</span>
+                    <span>Autorizar Cal</span>
+                </button>
             </div>
         </nav>
     </div>
@@ -716,6 +720,12 @@
                     // Cargar datos
                     this.cargarCategorias();
                     this.cargarEventos();
+
+                    // Verificar autorización de Google Calendar
+                    this.actualizarEstadoAutorizacion();
+
+                    // Verificar si hay callback del OAuth
+                    this.verificarAutorizacion();
                 } else {
                     // Sin sesión -> Mostrar pantalla de login
                     EMAIL = '';
@@ -1361,6 +1371,106 @@
                     });
                 } else {
                     this.showToast('💡 Abre el menú de tu navegador y selecciona "Instalar aplicación" o "Añadir a la pantalla de inicio"');
+                }
+            },
+
+            // ===== AUTORIZACIÓN DE GOOGLE CALENDAR (OAuth 2.0) =====
+            async autorizarGoogleCalendar() {
+                try {
+                    this.showToast('🔐 Iniciando autorización de Google Calendar...', 'info');
+
+                    const clientId = '290354628526-t77cvfpe7q3qc9f2b36ujnshiug9gtkd.apps.googleusercontent.com';
+                    const scope = 'https://www.googleapis.com/auth/calendar';
+                    const redirectUri = window.location.origin + window.location.pathname;
+                    const responseType = 'token';
+
+                    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?${new URLSearchParams({
+                        client_id: clientId,
+                        scope: scope,
+                        redirect_uri: redirectUri,
+                        response_type: responseType,
+                        access_type: 'offline',
+                        prompt: 'consent'
+                    }).toString()}`;
+
+                    // Abrir ventana de OAuth
+                    const authWindow = window.open(authUrl, 'google-calendar-auth', 'width=500,height=600');
+
+                    // Esperar a que el usuario complete la autenticación
+                    const checkAuth = setInterval(() => {
+                        if (authWindow.closed) {
+                            clearInterval(checkAuth);
+                            this.verificarAutorizacion();
+                        }
+                    }, 1000);
+                } catch(err) {
+                    this.showToast('❌ Error en autorización: ' + err.message, 'error');
+                }
+            },
+
+            async verificarAutorizacion() {
+                try {
+                    // Obtener token del URL hash si está disponible
+                    const hash = window.location.hash;
+                    if (!hash.includes('access_token')) {
+                        this.showToast('⏳ Esperando autorización...', 'info');
+                        return;
+                    }
+
+                    const params = new URLSearchParams(hash.substring(1));
+                    const accessToken = params.get('access_token');
+
+                    if (accessToken) {
+                        // Guardar token en Supabase
+                        await this.guardarTokenGoogleCalendar(accessToken);
+                        this.showToast('✅ Google Calendar autorizado correctamente', 'success');
+
+                        // Limpiar URL
+                        window.history.replaceState({}, document.title, window.location.pathname);
+
+                        // Actualizar estado
+                        this.actualizarEstadoAutorizacion();
+                    }
+                } catch(err) {
+                    this.showToast('❌ Error guardando autorización: ' + err.message, 'error');
+                }
+            },
+
+            async guardarTokenGoogleCalendar(accessToken) {
+                try {
+                    const { data, error } = await client
+                        .from('usuarios')
+                        .upsert({
+                            id: (await client.auth.getSession()).data.session.user.id,
+                            email: EMAIL,
+                            nombre: USER_NAME,
+                            foto_url: USER_PHOTO,
+                            google_calendar_token: accessToken,
+                            calendar_autorizado: true
+                        }, { onConflict: 'id' });
+
+                    if (error) throw error;
+                } catch(err) {
+                    this.showToast('⚠️ Error guardando token: ' + err.message);
+                }
+            },
+
+            async actualizarEstadoAutorizacion() {
+                try {
+                    const { data, error } = await client
+                        .from('usuarios')
+                        .select('calendar_autorizado')
+                        .eq('email', EMAIL)
+                        .single();
+
+                    if (data && data.calendar_autorizado) {
+                        document.getElementById('btn-autorizar-calendar').classList.add('hidden');
+                        this.showToast('📅 Tu Google Calendar ya está sincronizando eventos', 'success');
+                    } else {
+                        document.getElementById('btn-autorizar-calendar').classList.remove('hidden');
+                    }
+                } catch(err) {
+                    console.log('Autorización no verificada aún');
                 }
             }
         };

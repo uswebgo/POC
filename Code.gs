@@ -175,58 +175,134 @@ function guardarEventoEnSupabase(evento, email) {
   }
 }
 
-// ===== SINCRONIZAR CON GOOGLE CALENDAR =====
+// ===== SINCRONIZAR CON GOOGLE CALENDAR (Multi-usuario con OAuth) =====
 function sincronizarAGoogleCalendar() {
   try {
-    const calendar = CalendarApp.getCalendarById(CONFIG.CALENDAR_ID) || CalendarApp.getDefaultCalendar();
-
-    // Obtener eventos no sincronizados
-    const options = {
+    // Obtener todos los usuarios con calendar autorizado
+    const usuariosUrl = `${CONFIG.SUPABASE_URL}/rest/v1/usuarios?calendar_autorizado=eq.true&select=email,google_calendar_token`;
+    const usuariosOptions = {
       method: 'get',
       headers: getSupabaseHeaders(),
       muteHttpExceptions: true,
     };
 
-    const url = `${CONFIG.SUPABASE_URL}/rest/v1/eventos?email_usuario=eq.${CONFIG.EMAIL_DESTINO}&sincronizado_calendar=eq.false&order=fecha`;
-    const response = UrlFetchApp.fetch(url, options);
+    const usuariosResponse = UrlFetchApp.fetch(usuariosUrl, usuariosOptions);
 
-    if (response.getResponseCode() !== 200) {
-      Logger.log('⚠️ Error obteniendo eventos: ' + response.getContentText());
+    if (usuariosResponse.getResponseCode() !== 200) {
+      Logger.log('⚠️ Error obteniendo usuarios: ' + usuariosResponse.getContentText());
       return;
     }
 
-    const eventos = JSON.parse(response.getContentText());
+    const usuarios = JSON.parse(usuariosResponse.getContentText());
+    let totalSincronizados = 0;
+
+    usuarios.forEach(usuario => {
+      try {
+        const sincronizados = sincronizarEventosDelUsuario(usuario.email, usuario.google_calendar_token);
+        totalSincronizados += sincronizados;
+      } catch (err) {
+        Logger.log(`⚠️ Error sincronizando para ${usuario.email}: ${err}`);
+      }
+    });
+
+    Logger.log(`✅ Sincronización multi-usuario completada: ${totalSincronizados} eventos`);
+  } catch (err) {
+    Logger.log('❌ Error sincronizarAGoogleCalendar: ' + err);
+  }
+}
+
+function sincronizarEventosDelUsuario(emailUsuario, accessToken) {
+  try {
+    // Obtener eventos no sincronizados del usuario
+    const eventosUrl = `${CONFIG.SUPABASE_URL}/rest/v1/eventos?email_usuario=eq.${emailUsuario}&sincronizado_calendar=eq.false&order=fecha`;
+    const eventosOptions = {
+      method: 'get',
+      headers: getSupabaseHeaders(),
+      muteHttpExceptions: true,
+    };
+
+    const eventosResponse = UrlFetchApp.fetch(eventosUrl, eventosOptions);
+
+    if (eventosResponse.getResponseCode() !== 200) {
+      Logger.log(`⚠️ Error obteniendo eventos para ${emailUsuario}: ${eventosResponse.getContentText()}`);
+      return 0;
+    }
+
+    const eventos = JSON.parse(eventosResponse.getContentText());
     let sincronizados = 0;
 
     eventos.forEach(evento => {
       try {
-        const fecha = new Date(evento.fecha);
-        // Usar duración si existe, sino usar 1 hora por defecto
+        const fechaInicio = new Date(evento.fecha);
         const duracionMinutos = evento.duracion_minutos || 60;
-        const fechaFin = new Date(fecha.getTime() + duracionMinutos * 60 * 1000);
+        const fechaFin = new Date(fechaInicio.getTime() + duracionMinutos * 60 * 1000);
 
-        // Crear evento en Google Calendar
-        const event = calendar.createEvent(evento.titulo, fecha, fechaFin, {
-          description: `${evento.notas || ''}\n\n📁 Categoría: ${evento.categoria}`,
-          location: evento.categoria,
-          guests: CONFIG.EMAIL_DESTINO
-        });
+        // Crear evento en Google Calendar del usuario usando su token OAuth
+        const eventId = crearEventoEnGoogleCalendar(
+          accessToken,
+          evento.titulo,
+          fechaInicio,
+          fechaFin,
+          evento.notas,
+          evento.categoria,
+          emailUsuario
+        );
 
-        const eventId = event.getId();
-
-        // Marcar como sincronizado en Supabase
-        marcarSincronizadoEnCalendar(evento.id, eventId);
-        sincronizados++;
-
-        Logger.log(`📅 Evento sincronizado a Calendar: ${evento.titulo} (${eventId})`);
+        if (eventId) {
+          marcarSincronizadoEnCalendar(evento.id, eventId);
+          sincronizados++;
+          Logger.log(`📅 Evento sincronizado: ${evento.titulo} → ${emailUsuario}`);
+        }
       } catch (err) {
-        Logger.log(`⚠️ Error sincronizando evento ${evento.id}: ${err}`);
+        Logger.log(`⚠️ Error con evento ${evento.id}: ${err}`);
       }
     });
 
-    Logger.log(`✅ Sincronización completada: ${sincronizados}/${eventos.length} eventos`);
+    return sincronizados;
   } catch (err) {
-    Logger.log('❌ Error sincronizarAGoogleCalendar: ' + err);
+    Logger.log(`❌ Error sincronizarEventosDelUsuario para ${emailUsuario}: ${err}`);
+    return 0;
+  }
+}
+
+function crearEventoEnGoogleCalendar(accessToken, titulo, fechaInicio, fechaFin, notas, categoria, email) {
+  try {
+    const evento = {
+      summary: titulo,
+      description: `${notas || ''}\n\n📁 Categoría: ${categoria}`,
+      start: {
+        dateTime: fechaInicio.toISOString(),
+        timeZone: Session.getScriptTimeZone()
+      },
+      end: {
+        dateTime: fechaFin.toISOString(),
+        timeZone: Session.getScriptTimeZone()
+      }
+    };
+
+    const options = {
+      method: 'post',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      },
+      payload: JSON.stringify(evento),
+      muteHttpExceptions: true,
+    };
+
+    const url = 'https://www.googleapis.com/calendar/v3/calendars/primary/events';
+    const response = UrlFetchApp.fetch(url, options);
+
+    if (response.getResponseCode() === 200) {
+      const result = JSON.parse(response.getContentText());
+      return result.id;
+    } else {
+      Logger.log(`❌ Error creando evento en Calendar API: ${response.getContentText()}`);
+      return null;
+    }
+  } catch (err) {
+    Logger.log(`❌ Error crearEventoEnGoogleCalendar: ${err}`);
+    return null;
   }
 }
 
