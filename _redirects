@@ -1,0 +1,14 @@
+# SPA (Single Page Application) Routing
+# Redirige todas las rutas sin extensión de archivo a index.html
+# Permite que el router del cliente (JavaScript) maneje la navegación
+#
+# Ejemplos:
+# /events → /index.html (maneja el router en JS)
+# /settings → /index.html (maneja el router en JS)
+# /index.html → /index.html (archivo directo)
+# /manifest.json → /manifest.json (archivo directo)
+# /api/* → /api/* (pasar a través, no existirán localmente)
+#
+# El Worker (_worker.js) también maneja esto con fallback a index.html
+# Nota: La regla /* → /index.html se comenta porque el Worker ya maneja
+# el SPA routing en JavaScript. Esto evita loops infinitos en Cloudflare.

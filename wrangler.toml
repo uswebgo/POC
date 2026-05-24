@@ -1,0 +1,17 @@
+# Agenda Inteligente — Cloudflare Workers Configuration
+# Arquitectura Híbrida: Worker sirve assets estáticos + maneja rutas
+# API Backend: Supabase + Google Apps Script (externa)
+
+# ===== CONFIGURACIÓN BÁSICA =====
+name = "agenda-inteligente"
+main = "_worker.js"
+compatibility_date = "2026-05-22"
+compatibility_flags = ["nodejs_compat"]
+
+# ===== CONFIGURACIÓN DE ASSETS ESTÁTICOS =====
+# El Worker sirve archivos estáticos desde el directorio actual
+# Nota: Cloudflare excluye automáticamente archivos ocultos (.git, .env, etc)
+
+[assets]
+directory = "."
+binding = "ASSETS"
