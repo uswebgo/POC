@@ -71,11 +71,34 @@
             overflow-x: hidden;
             margin: 0;
             padding: 0;
+            width: 100%;
+            max-width: 100vw;
         }
 
         @supports(padding: max(0px)) {
-            body { 
-                padding-bottom: max(100px, env(safe-area-inset-bottom)); 
+            body {
+                padding-bottom: max(100px, env(safe-area-inset-bottom));
+            }
+        }
+
+        /* ===== FIX RESPONSIVE MÓVIL ===== */
+        main, header, nav, #login-screen, #app-layout {
+            width: 100%;
+            max-width: 100vw;
+            overflow-x: hidden;
+        }
+
+        @media (max-width: 640px) {
+            body {
+                font-size: 14px;
+            }
+
+            main {
+                padding: 1rem 0.5rem !important;
+            }
+
+            .glass-card, .glass-panel {
+                border-radius: 12px;
             }
         }
 
